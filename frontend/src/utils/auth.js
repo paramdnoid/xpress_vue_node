@@ -1,4 +1,5 @@
 import axios from '@/axios';
+import { useAuthStore } from '@/stores/auth'
 
 export async function login(email, password) {
   try {
@@ -11,14 +12,46 @@ export async function login(email, password) {
   }
 }
 
-export async function refreshAccessToken() {
+function isTokenExpired(token) {
   try {
-    const res = await axios.post('/token/refresh', {});
-    localStorage.setItem('accessToken', res.data.accessToken);
-    return true;
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return Date.now() >= payload.exp * 1000
+  } catch (e) {
+    console.warn('⚠️ Invalid token format')
+    return true
+  }
+}
+
+/**
+ * Refreshes access token if expired. Logs out via Pinia if failed.
+ * @returns {Promise<boolean>} true if refreshed, false if failed and logged out
+ */
+export async function refreshAccessToken() {
+  const authStore = useAuthStore()
+  const currentToken = localStorage.getItem('accessToken')
+
+  if (currentToken && !isTokenExpired(currentToken)) {
+    return true // Token noch gültig
+  }
+
+  try {
+    const res = await axios.post('/token/refresh', {}, { withCredentials: true })
+
+    const newToken = res.data?.accessToken
+    if (newToken) {
+      localStorage.setItem('accessToken', newToken)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+      console.log('🔄 Access token refreshed')
+      return true
+    } else {
+      throw new Error('No token returned')
+    }
   } catch (err) {
-    console.error("Refresh failed", err);
-    return false;
+    console.warn('❌ Refresh failed, logging out...')
+    authStore.clearUser()
+    localStorage.removeItem('accessToken')
+    window.location.href = '/login'
+    return false
   }
 }
 

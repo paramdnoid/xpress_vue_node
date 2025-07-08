@@ -41,24 +41,48 @@ async function generateRefreshToken(user, req) {
  * @returns {Object} JSON response with new access token or error.
  */
 const refreshToken = async (req, res) => {
-  const refreshTokenValue = req.cookies?.refresh_token || req.body.refreshToken || req.body.token;
-  if (!refreshTokenValue) {
-    console.log('[refreshToken] No token provided');
+  const oldToken = req.cookies?.refresh_token || req.body.token;
+  if (!oldToken) {
     return res.status(400).json({ error: 'No token provided' });
   }
 
   try {
-    const payload = jwt.verify(refreshTokenValue, process.env.JWT_REFRESH_SECRET);
-    const found = await db.findRefreshToken(refreshTokenValue);
+    const payload = jwt.verify(oldToken, process.env.JWT_REFRESH_SECRET);
+
+    // 1. Prüfen, ob Token existiert (noch nicht benutzt wurde)
+    const found = await db.findRefreshToken(oldToken);
     if (!found) {
-      console.log('[refreshToken] Refresh token not found');
-      return res.status(403).json({ error: 'Refresh token not found' });
+      console.warn(`[SECURITY] Attempted reuse of invalid/expired refresh token`);
+      return res.status(403).json({ error: 'Invalid refresh token' });
     }
 
+    // 2. Sofort löschen, egal ob der nächste Schritt klappt
+    await db.deleteRefreshToken(oldToken);
+
+    // 3. Neuen Refresh + Access Token erzeugen
+    const newRefreshToken = jwt.sign({ id: payload.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+    await db.saveRefreshToken({
+      user_id: payload.id,
+      token: newRefreshToken,
+      user_agent: req.headers['user-agent'],
+      ip_address: req.ip,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    });
+
     const accessToken = jwt.sign({ id: payload.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.cookie('refresh_token', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    console.log(`[ROTATE] Refresh token rotated for user ${payload.id}`);
     return res.json({ accessToken });
   } catch (err) {
-    console.log('[refreshToken] Invalid refresh token');
+    console.warn('[ROTATE] Invalid or expired refresh token:', err.message);
     return res.status(401).json({ error: 'Invalid refresh token' });
   }
 };
@@ -71,14 +95,35 @@ const refreshToken = async (req, res) => {
  */
 const revokeToken = async (req, res) => {
   const token = req.cookies?.refresh_token || req.body.token;
-  if (token) {
-    await db.deleteRefreshToken(token);
-    res.clearCookie('refresh_token');
-    console.log('[revokeToken] Refresh token revoked');
-  } else {
-    console.log('[revokeToken] No refresh token cookie found or token in body');
+  const allDevices = req.body.allDevices === true;
+
+  if (!token) {
+    console.log('[revokeToken] No token provided');
+    return res.json({ revoked: false });
   }
-  return res.json({ revoked: true });
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+
+    if (allDevices) {
+      await db.query('DELETE FROM refresh_tokens WHERE user_id = ?', [payload.id]);
+      console.log(`[revokeToken] All devices revoked for user ${payload.id}`);
+    } else {
+      await db.deleteRefreshToken(token);
+      console.log(`[revokeToken] Single device token revoked`);
+    }
+
+    res.clearCookie('refresh_token');
+    return res.json({ revoked: true });
+  } catch (err) {
+    console.error('[revokeToken] Invalid token', err);
+    return res.status(401).json({ error: 'Invalid token' });
+  }
 };
 
-module.exports = { refreshToken, revokeToken, generateRefreshToken };
+// Ergänzen:
+async function revokeAllUserTokens(userId) {
+  await db.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId])
+}
+
+module.exports = { refreshToken, revokeToken, generateRefreshToken, revokeAllUserTokens };

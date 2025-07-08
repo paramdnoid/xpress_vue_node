@@ -238,13 +238,13 @@ useAutoLogout()
 
 <style scoped>
 .logo-img {
-    height: 30px;
+    height: 35px;
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
 
 .logo-text {
     line-height: 1;
-    font-size: .8rem;
+    font-size: .9rem;
     font-weight: 300;
     letter-spacing: -0.4px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
@@ -256,9 +256,10 @@ useAutoLogout()
     }
 
     .logo-subtext {
-        font-size: 1rem;
+        font-size: 1.3rem;
         color: var(--tblr-light);
         line-height: 1;
+        font-weight: 500;
     }
 }
 
