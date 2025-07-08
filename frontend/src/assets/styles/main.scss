@@ -1,0 +1,53 @@
+@use "sass:math";
+@use "@tabler/core/scss/tabler";
+
+:root {
+    /* Replace the color value with your desired hue */
+    --tblr-primary: hsl(192, 98%, 35%);
+    --tblr-gutter-x: calc(var(--tblr-page-padding) * 2);
+}
+
+.navbar[data-bs-theme=dark] {
+    color-scheme: dark;
+    --tblr-bg-surface: var(--tblr-primary);
+    --tblr-navbar-border-color: white;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+
+    #app,
+    .page {
+        min-height: 100vh;
+    }
+
+    .verti-dash-content {
+        height: 30px;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        display: flex;
+        align-items: center;
+        padding-right: calc(var(--tblr-gutter-x) * 0.5);
+        padding-left: calc(var(--tblr-gutter-x) * 0.5);
+    }
+}
+
+.btn-check:checked + .btn, :not(.btn-check) + .btn:active, .btn:first-child:active, .btn.active, .btn.show {
+    border-color: transparent;
+}
+
+/* main.scss */
+.navbar {
+    min-height: 2.25rem;
+
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link:focus {
+        background-color: transparent !important;
+    }
+
+    .dropdown-item.active, .dropdown-item:active {
+        color: var(--tblr-gray-900);
+        text-decoration: none;
+        background-color: var(--tblr-dropdown-link-active-bg);
+    }
+}
+

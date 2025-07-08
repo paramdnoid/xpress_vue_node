@@ -1,0 +1,38 @@
+<template>
+  <ol class="breadcrumb breadcrumb-muted" aria-label="breadcrumbs">
+    <li v-for="(breadcrumb, index) in breadcrumbs"
+        :key="index"
+        class="breadcrumb-item"
+        :class="{ active: index === breadcrumbs.length - 1 }"
+        :aria-current="index === breadcrumbs.length - 1 ? 'page' : null">
+      <router-link v-if="index !== breadcrumbs.length - 1" :to="breadcrumb.link">
+        {{ breadcrumb.title }}
+      </router-link>
+      <span v-else>{{ breadcrumb.title }}</span>
+    </li>
+  </ol>
+</template>
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const breadcrumbs = computed(() => {
+  return route.matched.map(r => ({
+    title: r.meta && r.meta.title ? r.meta.title : r.path.replace('/', '').toUpperCase(),
+    link: r.path
+  }))
+})
+</script>
+
+<style scoped>
+.breadcrumb-item {
+    font-weight: 300 !important;
+    color: var(--tblr-gray-300);
+
+    &.active {
+        color: var(--tblr-light) !important;
+    }
+}
+</style>
