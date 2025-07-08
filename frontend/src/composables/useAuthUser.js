@@ -1,26 +1,37 @@
-import { ref, onMounted, readonly } from 'vue'
-import axios from '../axios'
+import { onMounted, computed } from 'vue'
+import axios from '@/axios'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const _user = ref(null)
+export function useAuthUser() {
+  const route = useRoute()
+  const authStore = useAuthStore()
 
-export function useAuthUser(auth) {
-  onMounted(() => {
-    fetchUser(auth)
-  })
-
-  const fetchUser = async (auth) => {
-    if (!_user.value && auth) {
-      try {
+  const fetchUser = async () => {
+    const token = localStorage.getItem('accessToken')
+    console.log('🪪 Checking token before /auth/me:', token)
+    try {
+      if (!route.meta.guest) {
         const res = await axios.get('/auth/me')
-        _user.value = res.data
-      } catch (err) {
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          _user.value = null
+        authStore.setUser(res.data)
+        console.log('✅ User loaded:', res.data)
+      }
+    } catch (err) {
+      console.warn('❌ /auth/me failed:', err)
+
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        console.log('🔁 Should trigger token refresh if interceptor works')
+        authStore.clearUser()
+        if (route.meta.requiresAuth) {
           window.location.href = '/login'
         }
       }
     }
   }
 
-  return { user: readonly(_user) }
+  onMounted(() => {
+    fetchUser()
+  })
+
+  return { user: computed(() => authStore.user) }
 }

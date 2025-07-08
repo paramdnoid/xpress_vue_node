@@ -24,7 +24,7 @@
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import axios from '@/axios';
 import { onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const token = route.query.token

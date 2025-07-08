@@ -1,11 +1,11 @@
 <template>
-  <DefaultLayout :auth="true">
+  <DefaultLayout>
     <template #page-title>
       <Breadcrumb />
     </template>
-      <div class="page-body">
-          
-      </div>
+    <div class="page-body">
+
+    </div>
   </DefaultLayout>
 </template>
 <script setup>

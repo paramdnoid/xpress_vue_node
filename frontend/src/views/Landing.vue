@@ -1,5 +1,5 @@
 <template>
-  <DefaultLayout :auth="false">
+  <DefaultLayout>
       <div class="page-header d-print-none" aria-label="Page header">
           <div class="container-fluid">
               <div class="row g-2 align-items-center">

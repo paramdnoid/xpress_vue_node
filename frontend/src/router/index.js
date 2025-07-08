@@ -11,7 +11,7 @@ import Profile from '@/views/Profile.vue';
 
 const routes = [
   { path: '/verify-email', component: Verify, meta: { title: 'Verify' } },
-  { path: '/', component: Landing, meta: { title: 'Landing' } },
+  { path: '/', component: Landing, meta: { title: 'Landing', guest: true } },
   { path: '/file-manager', component: FileManager, meta: { title: 'File Manager', requiresAuth: true } },
   { path: '/flows', component: Flows, meta: { title: 'Flows', requiresAuth: true } },
   { path: '/mails', component: Mails, meta: { title: 'Mails', requiresAuth: true } },
@@ -29,18 +29,17 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const defaultTitle = 'weppixpress'
-  document.title = to.meta.title ? `${to.meta.title} | ${defaultTitle}` : defaultTitle
+  const defaultTitle = 'weppixpress';
+  document.title = to.meta.title ? `${to.meta.title} | ${defaultTitle}` : defaultTitle;
 
-  // Robustere Auth-Prüfung
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('accessToken');
 
   if (to.meta.requiresAuth && !token) {
     console.warn('Kein Token vorhanden – Weiterleitung zu Login');
-    next({ path: '/login', query: { redirect: to.fullPath } })
+    next({ path: '/login', query: { redirect: to.fullPath } });
   } else {
-    next()
+    next();
   }
-})
+});
 
 export default router

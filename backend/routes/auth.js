@@ -7,7 +7,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
-const { login, register, refreshToken, getProfile, verifyEmail, resendVerification } = require('../controllers/authController');
+const { login, register, getProfile, verifyEmail, resendVerification } = require('../controllers/authController');
 const { verifyToken } = require('../middleware/auth')
 
 const authLimiter = rateLimit({
@@ -38,14 +38,7 @@ router.post(
   register
 );
 
-/**
- * @route POST /refresh
- * @description Refreshes the authentication token.
- */
-router.post(
-  '/refresh',
-  refreshToken
-);
+
 
 /**
  * @route GET /me

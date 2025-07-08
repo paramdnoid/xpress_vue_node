@@ -33,6 +33,10 @@ router.post('/refresh', refreshToken);
  * Revoke the authentication token.
  * 
  * @example
+ * // If using HttpOnly cookie, simply call:
+ * POST /revoke
+ * 
+ * // Or send in body:
  * POST /revoke
  * {
  *   "token": "string"

@@ -203,7 +203,7 @@
 
 <script setup>
 // Vue core imports
-import { computed, ref, onMounted } from 'vue'
+import { watchEffect, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 // Third-party and app-level composables
@@ -218,9 +218,11 @@ import UserDropdown from '@/components/layout/UserDropdown.vue'
 const route = useRoute()
 const props = defineProps({ auth: Boolean })
 const { user } = useAuthUser(props.auth)
+const logoTargetPath = ref(false)
 
-// Determines which link the logo should navigate to based on current path
-const logoTargetPath = computed(() => (route.path === '/' ? '/file-manager' : '/'))
+watchEffect(() => {
+  logoTargetPath.value = route.path === '/' ? '/file-manager' : '/'
+})
 
 const navbarMenuVisible = ref(false)
 

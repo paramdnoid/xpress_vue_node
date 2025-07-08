@@ -41,15 +41,15 @@ async function generateRefreshToken(user, req) {
  * @returns {Object} JSON response with new access token or error.
  */
 const refreshToken = async (req, res) => {
-  const { token } = req.body;
-  if (!token) {
+  const refreshTokenValue = req.cookies?.refresh_token || req.body.refreshToken || req.body.token;
+  if (!refreshTokenValue) {
     console.log('[refreshToken] No token provided');
     return res.status(400).json({ error: 'No token provided' });
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    const found = await db.findRefreshToken(token);
+    const payload = jwt.verify(refreshTokenValue, process.env.JWT_REFRESH_SECRET);
+    const found = await db.findRefreshToken(refreshTokenValue);
     if (!found) {
       console.log('[refreshToken] Refresh token not found');
       return res.status(403).json({ error: 'Refresh token not found' });
@@ -70,13 +70,13 @@ const refreshToken = async (req, res) => {
  * @returns {Object} JSON response confirming revocation.
  */
 const revokeToken = async (req, res) => {
-  const token = req.cookies?.refresh_token;
+  const token = req.cookies?.refresh_token || req.body.token;
   if (token) {
     await db.deleteRefreshToken(token);
     res.clearCookie('refresh_token');
     console.log('[revokeToken] Refresh token revoked');
   } else {
-    console.log('[revokeToken] No refresh token cookie found');
+    console.log('[revokeToken] No refresh token cookie found or token in body');
   }
   return res.json({ revoked: true });
 };

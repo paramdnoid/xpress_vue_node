@@ -17,7 +17,8 @@
           </div>
           <form class="mt-4 pt-2" @submit.prevent="login">
             <div class="form-floating form-floating-custom mb-3">
-              <input v-model="email" type="email" name="email" class="form-control" id="email" required autocomplete="email">
+              <input v-model="email" type="email" name="email" class="form-control" id="email" required
+                autocomplete="email">
               <div class="invalid-feedback">
                 Bitte Email eingeben
               </div>
@@ -26,20 +27,21 @@
                 <iconify-icon icon="bi:envelope-at" style="font-size: 24px"></iconify-icon>
               </div>
             </div>
-            <password-field v-model="password" autocomplete="current-password"/>
+            <password-field v-model="password" autocomplete="current-password" />
             <div class="form-check form-check-primary d-flex justify-content-between">
               <div class="d-flex align-items-center">
-                  <input class="form-check-input" type="checkbox" id="remember-check" name="remember_me">
-                  <label class="form-check-label font-size-12 ms-1" for="remember-check" style="margin-top: 4px;">
-                      Angemeldet bleiben
-                  </label>
+                <input class="form-check-input" type="checkbox" id="remember-check" name="remember_me">
+                <label class="form-check-label font-size-12 ms-1" for="remember-check" style="margin-top: 4px;">
+                  Angemeldet bleiben
+                </label>
               </div>
               <div class="d-flex align-items-center">
-                  <a href="/resetpassword" class="text-muted text-decoration-underline font-size-12" style="margin-top: 5px;">
-                      Passwort vergessen?
-                  </a>
+                <a href="/resetpassword" class="text-muted text-decoration-underline font-size-12"
+                  style="margin-top: 5px;">
+                  Passwort vergessen?
+                </a>
               </div>
-          </div>
+            </div>
             <div class="mt-3">
               <button class="btn btn-primary w-100">Login</button>
             </div>
@@ -69,7 +71,7 @@ const route = useRoute();
 
 const login = async () => {
   const res = await axios.post('/auth/login', { email: email.value, password: password.value }, { withCredentials: true })
-  localStorage.setItem('token', res.data.token || res.data.accessToken);
+  localStorage.setItem('accessToken', res.data.token || res.data.accessToken);
   const redirect = route.query.redirect || '/file-manager';
   router.push(redirect);
 };

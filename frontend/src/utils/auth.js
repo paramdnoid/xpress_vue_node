@@ -2,7 +2,7 @@ import axios from '@/axios';
 
 export async function login(email, password) {
   try {
-    const res = await axios.post('auth/login', { email, password }, { withCredentials: true });
+    const res = await axios.post('auth/login', { email, password });
     localStorage.setItem('accessToken', res.data.accessToken);
     return true;
   } catch (err) {
@@ -13,7 +13,7 @@ export async function login(email, password) {
 
 export async function refreshAccessToken() {
   try {
-    const res = await axios.post('/api/token/refresh', {}, { withCredentials: true });
+    const res = await axios.post('/token/refresh', {});
     localStorage.setItem('accessToken', res.data.accessToken);
     return true;
   } catch (err) {
@@ -23,19 +23,14 @@ export async function refreshAccessToken() {
 }
 
 export async function logout() {
-  const refreshToken = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('refresh_token='));
-
-  if (refreshToken) {
-    try {
-      await axios.post('/token/revoke', {}, { withCredentials: true });
-    } catch (e) {
-      console.warn("Could not revoke token");
-    }
+  try {
+    await axios.post('/token/revoke', {}, { withCredentials: true });
+    console.log('🔒 Refresh token revoked');
+  } catch (e) {
+    console.warn("⚠️ Could not revoke token:", e?.response || e);
   }
 
-  localStorage.removeItem('token');
+  localStorage.removeItem('accessToken');
   window.location.href = '/login';
 }
 
