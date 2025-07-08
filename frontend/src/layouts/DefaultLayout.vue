@@ -17,7 +17,7 @@
                 </div>
                 <div class="navbar-nav flex-row order-md-last">
                     <div v-if="user?.email" class="nav-item dropdown">
-                        <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown"
+                        <a href="#" class="nav-link d-flex lh-1 p-0 ps-2" data-bs-toggle="dropdown"
                             aria-label="Open user menu">
                             <span class="avatar avatar-sm text-light">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -28,9 +28,9 @@
                                         d="M14 14a5 5 0 0 1 5 5v1a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-1a5 5 0 0 1 5 -5h4z" />
                                 </svg>
                             </span>
-                            <div class="d-none d-md-block ps-2">
-                                <div class="text-light">{{ user?.name }}</div>
-                                <div class="mt-1 small" style="color: var(--tblr-gray-300)">{{ user?.email }}</div>
+                            <div class="d-none d-md-block ps-2 text-truncate" style="max-width: 140px;">
+                                <div class="text-light text-truncate w-100 overflow-hidden lh-xs">{{ user?.name }}</div>
+                                <div class="mt-1 small text-truncate w-100 overflow-hidden lh-xs" style="color: var(--tblr-gray-300);padding-right: 3px;">{{ user?.email }}</div>
                             </div>
                         </a>
                         <UserDropdown />
@@ -263,10 +263,13 @@ useAutoLogout()
     }
 }
 
-
-
 .avatar {
     --tblr-avatar-bg: hsl(192, 98%, 32%);
+}
+
+.avatar .icon {
+    width: 1.2rem;
+    height: 1.2rem;
 }
 
 .fade-slide-enter-active,
@@ -278,5 +281,8 @@ useAutoLogout()
 .fade-slide-leave-to {
     opacity: 0;
     transform: translateY(-10px);
+}
+.lh-xs {
+    line-height: .75;
 }
 </style>
