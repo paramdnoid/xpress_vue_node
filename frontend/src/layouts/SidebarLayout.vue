@@ -2,10 +2,13 @@
   <DefaultLayout>
     <template #page-title>
       <button class="btn btn-sm btn-toolbar border-0 me-2" @click="isSidebarOpen = !isSidebarOpen">
-        <iconify-icon v-if="isSidebarOpen" icon="flowbite:open-sidebar-alt-solid" width="24" height="24"></iconify-icon>
-        <iconify-icon v-else icon="flowbite:close-sidebar-alt-solid" width="24" height="24"></iconify-icon>
+        <iconify-icon v-if="isSidebarOpen" icon="system-uicons:window-collapse-left" width="21" height="21"></iconify-icon>
+        <iconify-icon v-else icon="system-uicons:window-collapse-right" width="21" height="21"></iconify-icon>
       </button>
       <Breadcrumb />
+      <div class="ms-auto d-flex align-items-center text-light" style="font-weight: 300;font-size: .93rem;">
+        <iconify-icon icon="system-uicons:menu-vertical"></iconify-icon> Menu
+      </div>
     </template>
 
     <div class="page-body position-relative m-0">

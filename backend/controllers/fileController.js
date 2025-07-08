@@ -1,27 +1,21 @@
 const fs = require('fs');
 const path = require('path');
-
-const uploadDir = path.join(__dirname, '../../uploads');
+const readDirectoryRecursive = require('../utils/readDirectoryRecursive');
 
 const listFiles = (req, res) => {
-  const userDir = path.join(uploadDir, req.user.id.toString());
-  if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
+  const baseDir = path.join(__dirname, '../..', 'uploads', req.user.id.toString()); // Adjust as needed
 
-  const files = fs.readdirSync(userDir).map(name => {
-    const stats = fs.statSync(path.join(userDir, name));
-    return {
-      name,
-      isDirectory: stats.isDirectory(),
-      size: stats.size,
-      created: stats.birthtime
-    };
-  });
-
-  res.json(files);
+  try {
+    const data = readDirectoryRecursive(baseDir);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to read directory' });
+  }
 };
 
 const uploadFile = (req, res) => {
-  const userDir = path.join(uploadDir, req.user.id.toString());
+  const userDir = path.join(baseDir, req.user.id.toString());
   if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
 
   for (const file of req.files) {
@@ -32,7 +26,7 @@ const uploadFile = (req, res) => {
 };
 
 const downloadFile = (req, res) => {
-  const filePath = path.join(uploadDir, req.user.id.toString(), req.query.name);
+  const filePath = path.join(baseDir, req.user.id.toString(), req.query.name);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ message: 'File not found' });
   }
@@ -40,7 +34,7 @@ const downloadFile = (req, res) => {
 };
 
 const deleteFile = (req, res) => {
-  const filePath = path.join(uploadDir, req.user.id.toString(), req.params.id);
+  const filePath = path.join(baseDir, req.user.id.toString(), req.params.id);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ message: 'File not found' });
   }
@@ -49,7 +43,7 @@ const deleteFile = (req, res) => {
 };
 
 const createFolder = (req, res) => {
-  const folderPath = path.join(uploadDir, req.user.id.toString(), req.body.name);
+  const folderPath = path.join(baseDir, req.user.id.toString(), req.body.name);
   fs.mkdirSync(folderPath, { recursive: true });
   res.json({ created: req.body.name });
 };
