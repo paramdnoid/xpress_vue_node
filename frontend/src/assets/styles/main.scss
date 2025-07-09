@@ -20,15 +20,11 @@ body {
     .page {
         min-height: 100vh;
     }
+}
 
-    .verti-dash-content {
-        height: 30px;
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
-        display: flex;
-        align-items: center;
-        padding-right: calc(var(--tblr-gutter-x) * 0.6);
-        padding-left: calc(var(--tblr-gutter-x) * 0.3);
-    }
+.form-control:focus, .form-control:active {
+    box-shadow: none;
+    border-color: var(--tblr-primary)
 }
 
 .btn-check:checked + .btn, :not(.btn-check) + .btn:active, .btn:first-child:active, .btn.active, .btn.show {

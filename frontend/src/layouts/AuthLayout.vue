@@ -113,7 +113,7 @@ const currentYear = new Date().getFullYear()
     right: 0;
     top: 0;
     width: 100%;
-    background: radial-gradient(at 50% -20%, #00a0c8, #028daf) fixed;
+    background-color: var(--tblr-primary);
     opacity: .85;
 }
 

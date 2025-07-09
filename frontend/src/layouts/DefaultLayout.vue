@@ -282,7 +282,17 @@ useAutoLogout()
     opacity: 0;
     transform: translateY(-10px);
 }
+
 .lh-xs {
     line-height: .75;
+}
+
+.verti-dash-content {
+    height: 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    padding-right: calc(var(--tblr-gutter-x) * 0.6);
+    padding-left: calc(var(--tblr-gutter-x) * 0.3);
 }
 </style>
