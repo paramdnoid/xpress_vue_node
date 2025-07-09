@@ -1,17 +1,25 @@
 <template>
   <SidebarLayout>
     <template #sidebar>
-    <div class="p-4">
-      <h3>📂 Your Files</h3>
-      <ul>
-        <TreeNode v-for="node in treeData" :key="node.path" :node="node" />
-      </ul>
-    </div>
-
-                    
+      <div class="col-docs px-3">
+        <div class="py-4">
+          <div class="space-y space-y-5">
+            <div class="flex-fill">
+              <nav class="space-y space-y-5" id="menu">
+                <div>
+                  <div class="subheader mb-2">
+                    Tabler UI
+                  </div>
+                  <nav class="nav nav-vertical">
+                    <TreeNode v-for="node in treeData" :key="node.path" :node="node" />
+                  </nav>
+                </div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
     </template>
-
-    <!-- Your main content here -->
   </SidebarLayout>
 </template>
 
