@@ -7,10 +7,10 @@
             <div class="flex-fill">
               <nav class="space-y space-y-5" id="menu">
                 <div>
-                  <div class="subheader mb-2">
-                    Tabler UI
+                  <div class="subheader mb-2 px-3 fw-bolder">
+                    Hauptordner
                   </div>
-                  <nav class="nav nav-vertical">
+                  <nav class="nav nav-vertical ps-2">
                     <TreeNode v-for="node in treeData" :key="node.path" :node="node" />
                   </nav>
                 </div>

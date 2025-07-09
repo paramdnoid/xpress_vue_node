@@ -5,7 +5,7 @@
       href="#"
       @click.prevent="isOpen = !isOpen"
       :data-bs-toggle="'collapse'"
-      :data-bs-target="'#collapse-' + safeId"
+      :data-bs-target="'#collapse' + safeId"
       :aria-expanded="isOpen.toString()"
     >
       {{ node.name }}
@@ -15,7 +15,7 @@
     <nav
       class="nav nav-vertical collapse"
       :class="{ show: isOpen }"
-      :id="'collapse-' + safeId"
+      :id="'collapse' + safeId"
     >
       <template v-for="child in node.children" :key="child.path">
         <TreeNode v-if="child.type === 'folder'" :node="child" />
