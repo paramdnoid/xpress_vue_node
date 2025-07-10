@@ -1,33 +1,83 @@
 <template>
   <DefaultLayout>
-    <template #page-title>
-      <button class="btn btn-sm btn-toolbar border-0 me-2" @click="isSidebarOpen = !isSidebarOpen">
-        <iconify-icon v-if="isSidebarOpen" icon="system-uicons:window-collapse-left" width="21" height="21"></iconify-icon>
-        <iconify-icon v-else icon="system-uicons:window-collapse-right" width="21" height="21"></iconify-icon>
-      </button>
-      <Breadcrumb />
-      <div class="ms-auto d-flex align-items-center text-light" style="font-weight: 300;font-size: .93rem;">
-        <iconify-icon icon="system-uicons:menu-vertical"></iconify-icon> Menu
-      </div>
-    </template>
+    <div class="page-body m-0">
 
-    <div class="page-body position-relative m-0">
-      <div class="position-absolute top-0 end-0 start-0 bottom-0 overflow-hidden">
-        <aside :class="['sidebar', { open: isSidebarOpen }]" style="overflow-y: auto;">
-          <slot name="sidebar" />
-        </aside>
-        <div :class="['content', { open: isSidebarOpen }]">
-          <slot />
-        </div>
+      <div class="verti-dash-content">
+        <SidebarToggle />
       </div>
+      <div class="d-flex flex-fill position-relative">
+        <div class="position-absolute top-0 end-0 start-0 bottom-0 overflow-hidden">
+          <div class="d-flex h-100">
+            <aside :class="['sidebar', { open: isSidebarOpen }]">
+              <slot name="sidebar" />
+            </aside>
+            <main class="content">
+              <slot name="content" />
+            </main>
+
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
   </DefaultLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount, provide } from 'vue'
 import DefaultLayout from './DefaultLayout.vue'
-import Breadcrumb from '@/components/Breadcrumb.vue'
+import SidebarToggle from '@/components/SidebarToggle.vue'
 
 const isSidebarOpen = ref(true)
+const isWide = ref(window.innerWidth >= 768)
+
+const updateSidebarState = () => {
+  const wide = window.innerWidth >= 768
+  isWide.value = wide
+  isSidebarOpen.value = wide
+}
+
+const toggleSidebarState = () => {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+
+provide('toggleSidebarState', toggleSidebarState)
+provide('isSidebarOpen', isSidebarOpen)
+
+onMounted(() => {
+  updateSidebarState()
+  window.addEventListener('resize', updateSidebarState)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateSidebarState)
+})
 </script>
+
+<style>
+.sidebar {
+  min-width: 300px;
+  display: none;
+  flex-direction: column;
+  background-color: var(--tblr-gray-100);
+  border-right: 1px solid var(--tblr-gray-300);
+  position: relative;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.sidebar.open {
+  display: flex;
+}
+
+.content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+
+@media (min-width: 576px) {}
+</style>

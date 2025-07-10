@@ -10,7 +10,7 @@
 .navbar[data-bs-theme=dark] {
     color-scheme: dark;
     --tblr-bg-surface: var(--tblr-primary);
-    --tblr-navbar-border-color: white;
+    --tblr-navbar-border-color: rgba(255, 255, 255, 0.04);
 }
 
 body {
@@ -19,6 +19,7 @@ body {
     #app,
     .page {
         min-height: 100vh;
+        width: 100vw;
     }
 }
 
@@ -47,40 +48,13 @@ body {
     }
 }
 
-.sidebar {
-    height: 100%;
-    width: 25%;
-    min-width: 280px;
-    background-color: var(--tblr-gray-100);
-    border-right: 1px solid var(--tblr-gray-300);
-    transition: transform 0.3s ease;
+.verti-dash-content {
+    height: 35px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding-right: calc(var(--tblr-gutter-x) * 0.6);
+    padding-left: calc(var(--tblr-gutter-x) * 0.3);
+    background: var(--tblr-primary);
 }
 
-.content {
-    margin: .5rem 1rem;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-}
-
-/* Responsive */
-@media (min-width: 768px) {
-    .sidebar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        transform: translateX(-100%);
-        z-index: 1000;
-    }
-
-    .sidebar.open {
-        transform: translateX(0);
-    }
-
-    .content.open {
-        left: 25%;
-    }
-}

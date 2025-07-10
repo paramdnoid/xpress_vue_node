@@ -182,15 +182,6 @@
                     </ul>
                 </div>
             </div>
-
-            <Transition name="fade-slide" mode="out-in">
-                <template v-if="$slots['page-title'] && !navbarMenuVisible">
-                    <div class="verti-dash-content">
-                        <slot name="page-title" />
-                    </div>
-                </template>
-            </Transition>
-
         </header>
         <div class="page-wrapper">
             <slot />
@@ -222,15 +213,6 @@ const logoTargetPath = ref(false)
 
 watchEffect(() => {
   logoTargetPath.value = route.path === '/' ? '/file-manager' : '/'
-})
-
-const navbarMenuVisible = ref(false)
-
-onMounted(() => {
-  const navbarMenu = document.getElementById('navbar-menu')
-  if (!navbarMenu) return
-  navbarMenu.addEventListener('shown.bs.collapse', () => (navbarMenuVisible.value = true))
-  navbarMenu.addEventListener('hidden.bs.collapse', () => (navbarMenuVisible.value = false))
 })
 
 useAutoLogout()
@@ -272,27 +254,7 @@ useAutoLogout()
     height: 1.2rem;
 }
 
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-    opacity: 0;
-    transform: translateY(-10px);
-}
-
 .lh-xs {
     line-height: .75;
-}
-
-.verti-dash-content {
-    height: 30px;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
-    display: flex;
-    align-items: center;
-    padding-right: calc(var(--tblr-gutter-x) * 0.6);
-    padding-left: calc(var(--tblr-gutter-x) * 0.3);
 }
 </style>
