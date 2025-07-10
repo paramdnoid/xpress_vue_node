@@ -44,7 +44,7 @@
 import { ref, onMounted, onBeforeUnmount, provide } from 'vue'
 import DefaultLayout from './DefaultLayout.vue'
 import SidebarToggle from '@/components/SidebarToggle.vue'
-import Breadcrumb from '../components/Breadcrumb.vue'
+import Breadcrumb from '@/components/Breadcrumb.vue'
 
 const viewMode = ref('list')
 provide('viewMode', viewMode)

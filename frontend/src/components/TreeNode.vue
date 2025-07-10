@@ -11,7 +11,8 @@
         :aria-expanded="isOpen.toString()"
       >
         {{ node.name }}
-        <span class="nav-link-toggle"></span>
+        <span v-if="loading" class="spinner-border spinner-border-sm ms-auto" role="status"></span>
+        <span v-else class="nav-link-toggle"></span>
       </a>
 
       <nav
@@ -36,24 +37,32 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useFileStore } from '@/stores/files';
 import axios from '@/axios';
 
+const fileStore = useFileStore();
 const props = defineProps({ node: Object });
 const isOpen = ref(false);
-
+const loading = ref(false);
 const safeId = computed(() => props.node.path.replace(/[^\w-]/g, '_'));
 
-// Lazy load children
+// Lazy load children & update breadcrumb
 const toggle = async () => {
   isOpen.value = !isOpen.value;
 
   if (!props.node.children && isOpen.value && props.node.type === 'folder') {
-    const res = await axios.get('/files', {
-      params: { path: props.node.path }
-    });
-
-    // Füge dynamisch children hinzu
-    props.node.children = res.data.children;
+    loading.value = true;
+    try {
+      const res = await axios.get('/files', {
+        params: { path: props.node.path }
+      });
+      props.node.children = res.data.children;
+      fileStore.setCurrentPath(props.node.path); // Breadcrumb aktualisieren
+    } finally {
+      loading.value = false;
+    }
+  } else if (isOpen.value && props.node.type === 'folder') {
+    fileStore.setCurrentPath(props.node.path); // bereits geladene Ordner
   }
 };
 </script>

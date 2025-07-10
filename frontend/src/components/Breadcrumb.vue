@@ -1,22 +1,57 @@
 <template>
   <ol class="breadcrumb breadcrumb-muted" aria-label="breadcrumbs">
-    <li v-for="(breadcrumb, index) in breadcrumbs"
-        :key="index"
+    <template v-if="isFileManager">
+      <li class="breadcrumb-item">
+        <a href="#" @click.prevent="goTo(-1)">File Manager</a>
+      </li>
+      <li
+        v-for="(segment, index) in segments"
+        :key="'file-' + index"
+        class="breadcrumb-item"
+        :class="{ active: index === segments.length - 1 }"
+        :aria-current="index === segments.length - 1 ? 'page' : null"
+      >
+        <a v-if="index !== segments.length - 1" href="#" @click.prevent="goTo(index)">
+          {{ segment }}
+        </a>
+        <span v-else>{{ segment }}</span>
+      </li>
+    </template>
+    <template v-else>
+      <li
+        v-for="(breadcrumb, index) in breadcrumbs"
+        :key="'route-' + index"
         class="breadcrumb-item"
         :class="{ active: index === breadcrumbs.length - 1 }"
-        :aria-current="index === breadcrumbs.length - 1 ? 'page' : null">
-      <router-link v-if="index !== breadcrumbs.length - 1" :to="breadcrumb.link">
-        {{ breadcrumb.title }}
-      </router-link>
-      <span v-else>{{ breadcrumb.title }}</span>
-    </li>
+        :aria-current="index === breadcrumbs.length - 1 ? 'page' : null"
+      >
+        <router-link v-if="index !== breadcrumbs.length - 1" :to="breadcrumb.link">
+          {{ breadcrumb.title }}
+        </router-link>
+        <span v-else>{{ breadcrumb.title }}</span>
+      </li>
+    </template>
   </ol>
 </template>
+
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useFileStore } from '@/stores/files'
 
+const fileStore = useFileStore()
 const route = useRoute()
+
+const isFileManager = computed(() => fileStore.currentPath !== '')
+
+const segments = computed(() =>
+  fileStore.currentPath.split('/').filter(Boolean)
+)
+
+const goTo = (index) => {
+  const newPath = segments.value.slice(0, index + 1).join('/')
+  fileStore.setCurrentPath(newPath)
+}
 
 const breadcrumbs = computed(() => {
   return route.matched.map(r => ({
@@ -28,11 +63,15 @@ const breadcrumbs = computed(() => {
 
 <style scoped>
 .breadcrumb-item {
+  font-weight: 300 !important;
+  
+  a {
+    color: var(--tblr-gray-200) !important;
     font-weight: 300 !important;
-    color: var(--tblr-gray-300);
-
-    &.active {
-        color: var(--tblr-light) !important;
-    }
+  }
+  
+  &.active {
+    color: var(--tblr-light) !important;
+  }
 }
 </style>

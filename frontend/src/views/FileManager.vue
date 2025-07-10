@@ -18,17 +18,23 @@
 
 <script setup>
 import axios from '@/axios';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
+import { useFileStore } from '@/stores/files';
 import TreeNode from '@/components/TreeNode.vue';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
 
 const files = ref([]);
+const fileStore = useFileStore();
+const segments = computed(() => fileStore.currentPath.split('/'));
+
+const goTo = async (index) => {
+  const path = segments.value.slice(0, index + 1).join('/');
+  fileStore.setCurrentPath(path);
+};
 
 onMounted(async () => {
   const res = await axios.get('/files');
-
-  console.log(res.data.children);
-
   files.value = res.data.children;
+  fileStore.setCurrentPath('');
 });
 </script>
