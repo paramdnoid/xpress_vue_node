@@ -37,10 +37,9 @@ router.beforeEach(async (to, from, next) => {
 
   // if route requires auth, ensure token is valid (or refresh it)
   if (to.meta.requiresAuth) {
-    const ok = await refreshAccessToken();
-    console.log('Refresh erfolgreich?', ok);
-    
+    const ok = await refreshAccessToken();    
     const token = localStorage.getItem('accessToken');
+    
     if (!ok || !token) {
       console.warn('No valid token – redirecting to Login');
       return next({ path: '/login', query: { redirect: to.fullPath } });
