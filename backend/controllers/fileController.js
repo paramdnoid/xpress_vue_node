@@ -2,11 +2,26 @@ const fs = require('fs');
 const path = require('path');
 const readDirectoryRecursive = require('../utils/readDirectoryRecursive');
 
-const listFiles = (req, res) => {
-  const baseDir = path.join(__dirname, '../..', 'uploads', req.user.id.toString()); // Adjust as needed
+const baseDir = path.join(__dirname, '../..', 'uploads');
+
+const listFolders = (req, res) => {
+  const baseDirUser = path.join(baseDir, req.user.id.toString()); // Adjust as needed
 
   try {
-    const data = readDirectoryRecursive(baseDir);
+    const data = readDirectoryRecursive(baseDirUser);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to read directory' });
+  }
+};
+
+const listFolderFiles = (req, res) => {
+  const userDir = path.join(baseDir, req.user.id.toString());
+  const targetDir = path.join(userDir, req.query.path || '');
+
+  try {
+    const data = readDirectoryRecursive(targetDir, false); // false = nicht rekursiv
     res.json(data);
   } catch (err) {
     console.error(err);
@@ -18,11 +33,15 @@ const uploadFile = (req, res) => {
   const userDir = path.join(baseDir, req.user.id.toString());
   if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
 
-  for (const file of req.files) {
-    const dest = path.join(userDir, file.originalname);
-    fs.renameSync(file.path, dest);
-  }
-  res.json({ uploaded: req.files.length });
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'No file uploaded' });
+
+  const uploadPath = path.join(userDir, req.body.path || file.originalname);
+  const uploadDir = path.dirname(uploadPath);
+  fs.mkdirSync(uploadDir, { recursive: true });
+  fs.renameSync(file.path, uploadPath);
+
+  res.json({ uploaded: true });
 };
 
 const downloadFile = (req, res) => {
@@ -48,4 +67,4 @@ const createFolder = (req, res) => {
   res.json({ created: req.body.name });
 };
 
-module.exports = { listFiles, uploadFile, downloadFile, deleteFile, createFolder };
+module.exports = { listFolders, uploadFile, downloadFile, deleteFile, createFolder, listFolderFiles };

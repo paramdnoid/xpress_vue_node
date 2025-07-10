@@ -3,11 +3,8 @@
 
 
     <!-- Dropzone -->
-    <div
-      class="dropzone border border-dashed rounded p-5 mb-4 text-center"
-      @dragover.prevent
-      @drop.prevent="handleDrop($event)"
-    >
+    <div class="dropzone border border-dashed rounded p-5 mb-4 text-center" @dragover.prevent
+      @drop.prevent="handleDrop($event)">
       <p class="mb-0">📁 Drag & Drop files or folders here to upload</p>
     </div>
 
@@ -27,16 +24,20 @@
       <table class="table table-hover">
         <thead>
           <tr>
-            <th>Name</th><th>Modified</th><th>Path</th><th class="text-end">Size</th>
+            <th>Name</th>
+            <th>Modified</th>
+            <th class="text-end">Size</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="file in flatList" :key="file.path">
-            <td :style="{ paddingLeft: `${file.depth * 20}px` }">
-              <i :class="getFileIcon(file)" class="me-2"></i>{{ file.name }}
+            <td :style="{ paddingLeft: `${file.depth * 20}px` }" class="align-middle">
+              <div class="d-flex align-items-center text-muted">
+                <iconify-icon :icon="getFileIcon(file)" class="me-2" width="20" height="20" />
+                {{ file.name }}
+              </div>
             </td>
             <td>{{ file.modified }}</td>
-            <td>{{ file.path }}</td>
             <td class="text-end">{{ file.size }}</td>
           </tr>
         </tbody>
@@ -47,7 +48,7 @@
       <div class="col-sm-6 col-md-4 col-lg-3" v-for="file in files" :key="file.path">
         <div class="card">
           <div class="card-body text-center">
-            <i :class="[getFileIcon(file), 'fs-1']"></i>
+            <iconify-icon :icon="getFileIcon(file)" width="32" height="32" />
             <div class="fw-bold text-truncate mt-2">{{ file.name }}</div>
           </div>
         </div>
@@ -58,7 +59,7 @@
 
 <script setup>
 import { ref, computed, inject } from 'vue'
-import axios from 'axios'
+import axios from '@/axios'
 
 const props = defineProps({
   nodes: Object
@@ -76,29 +77,29 @@ const uploadedCount = ref(0)
 // --- Datei-Typ & Icon ---
 const getFileIcon = (file) => {
   switch (file.type) {
-    case 'folder': return 'ti ti-folder'
-    case 'image': return 'ti ti-photo'
-    case 'video': return 'ti ti-video'
-    case 'audio': return 'ti ti-music'
-    case 'ppt': return 'ti ti-presentation'
-    case 'archive': return 'ti ti-zip'
-    case 'code': return 'ti ti-file-code'
-    default: return 'ti ti-file'
+    case 'folder': return 'mdi:folder'
+    case 'image': return 'mdi:file-image'
+    case 'video': return 'mdi:file-video'
+    case 'audio': return 'mdi:file-music'
+    case 'ppt': return 'mdi:file-powerpoint'
+    case 'archive': return 'mdi:archive'
+    case 'code': return 'mdi:file-code'
+    default: return 'mdi:file'
   }
 }
 const detectFileType = (name) => {
   const ext = name.split('.').pop().toLowerCase()
-  if (['jpg','jpeg','png','gif'].includes(ext)) return 'image'
-  if (['mp4','mov','avi'].includes(ext)) return 'video'
-  if (['mp3','wav'].includes(ext)) return 'audio'
-  if (['ppt','pptx'].includes(ext)) return 'ppt'
-  if (['zip','rar'].includes(ext)) return 'archive'
-  if (['js','css','ts','php','html'].includes(ext)) return 'code'
+  if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'image'
+  if (['mp4', 'mov', 'avi'].includes(ext)) return 'video'
+  if (['mp3', 'wav'].includes(ext)) return 'audio'
+  if (['ppt', 'pptx'].includes(ext)) return 'ppt'
+  if (['zip', 'rar'].includes(ext)) return 'archive'
+  if (['js', 'css', 'ts', 'php', 'html'].includes(ext)) return 'code'
   return 'file'
 }
 const formatBytes = (bytes) => {
   if (bytes === 0) return '0 Bytes'
-  const k = 1024, sizes = ['Bytes','KB','MB','GB']
+  const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
@@ -121,6 +122,17 @@ const flatList = computed(() => {
   recurse(files.value)
   return list
 })
+
+// --- Ordner-Inhalt vom Backend laden ---
+const fetchFolderContents = async (folderPath) => {
+  try {
+    const res = await axios.get('/files/folder', { params: { path: folderPath } });
+    return res.data;
+  } catch (err) {
+    uploadError.value = 'Fehler beim Laden des Ordners: ' + (err.message || err);
+    return [];
+  }
+};
 
 // --- DRAG & DROP HANDLER ---
 const handleDrop = async (event) => {
@@ -153,12 +165,10 @@ const handleDrop = async (event) => {
 
   // Nach dem Upload nur den selektierten Ordner aktualisieren
   if (props.nodes?.path) {
-    try {
-      const res = await axios.get('/files', { params: { path: props.nodes.path } })
-      props.nodes.children = res.data
-    } catch (err) {
-      uploadError.value = 'Fehler beim Aktualisieren der Dateien: ' + (err.message || err)
-    }
+
+    console.log(props.nodes?.path);
+
+    props.nodes.children = await fetchFolderContents(props.nodes.path);
   }
 
   // Optional: Anzeigen in der Liste
@@ -197,7 +207,7 @@ const uploadToBackend = async (file, fullPath) => {
     formData.append('file', file)
     formData.append('path', fullPath) // backend kann daraus Ordnerstruktur erzeugen
 
-    await axios.post('/api/upload', formData)
+    await axios.post('/files/upload', formData)
   } catch (err) {
     uploadError.value = err.message || 'Upload fehlgeschlagen'
   }
@@ -209,6 +219,7 @@ const uploadToBackend = async (file, fullPath) => {
 .dropzone {
   background: #f8fafc;
 }
+
 .dropzone:hover {
   background: #e7f1fc;
   cursor: pointer;
