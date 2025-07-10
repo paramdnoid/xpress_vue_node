@@ -10,7 +10,17 @@
         <div class="position-absolute top-0 end-0 start-0 bottom-0 overflow-hidden">
           <div class="d-flex h-100">
             <aside :class="['sidebar', { open: isSidebarOpen }]">
-              <slot name="sidebar" />
+              <div class="col-docs">
+                <div class="py-3">
+                  <div class="space-y space-y-5">
+                    <div class="flex-fill">
+                      <nav class="space-y space-y-5" id="menu">
+                        <slot name="sidebar" />
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              </div>             
             </aside>
             <main class="content">
               <slot name="content" />

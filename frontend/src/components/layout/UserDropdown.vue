@@ -18,7 +18,7 @@
           <div class="modal-body">
             <p>Möchtest du dich wirklich abmelden?</p>
           </div>
-          <div class="modal-footer border-0">
+          <div class="modal-footer bg-white border-0 p-1 gap-0">
             <button class="btn btn-secondary" @click="showConfirm = false">Abbrechen</button>
             <button class="btn btn-danger" @click="confirmLogout">Logout</button>
           </div>
