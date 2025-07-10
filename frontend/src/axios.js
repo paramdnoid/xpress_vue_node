@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { refreshAccessToken } from '@/utils/auth'
+import { refreshAccessToken, getTokenRemainingSeconds } from '@/utils/auth'
 
 const instance = axios.create({
   baseURL: '/api',
@@ -25,6 +25,7 @@ instance.interceptors.response.use(
       originalRequest._retry = true
 
       const refreshed = await refreshAccessToken()
+      
       if (refreshed) {
         const token = localStorage.getItem('accessToken')
         originalRequest.headers.Authorization = `Bearer ${token}`

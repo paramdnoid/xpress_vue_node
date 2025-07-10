@@ -4,7 +4,7 @@ import { createPinia } from 'pinia'
 import router from './router'
 import 'iconify-icon'
 
-// ✅ dein Bootstrap SCSS
+// ✅ Bootstrap SCSS
 import '@tabler/core/js/tabler.js'
 import './assets/styles/main.scss'
 

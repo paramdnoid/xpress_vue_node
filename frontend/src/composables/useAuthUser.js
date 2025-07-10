@@ -9,12 +9,11 @@ export function useAuthUser() {
 
   const fetchUser = async () => {
     const token = localStorage.getItem('accessToken')
-    console.log('🪪 Checking token before /auth/me:', token)
     try {
       if (!route.meta.guest) {
         const res = await axios.get('/auth/me')
         authStore.setUser(res.data)
-        console.log('✅ User loaded:', res.data)
+
       }
     } catch (err) {
       console.warn('❌ /auth/me failed:', err)

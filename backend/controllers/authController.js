@@ -10,10 +10,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const db = require('../models/db');
-const { generateRefreshToken } = require('./tokenController');
-const { refreshToken: handleRefreshToken } = require('./tokenController');
+const { generateRefreshToken, refreshToken, generateAccessToken } = require('./tokenController');
 const crypto = require('crypto');
 const { sendVerificationEmail } = require('../utils/mail');
 
@@ -39,7 +37,8 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      // Generate access token using shared helper
+      const accessToken = generateAccessToken({ id: user.id });
     const refreshToken = await generateRefreshToken(user, req);
 
     // Set refresh token as HttpOnly cookie
@@ -97,12 +96,6 @@ const register = async (req, res) => {
   }
 };
 
-/**
- * Handles refresh token requests by delegating to the tokenController.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- */
-const refreshToken = (req, res) => handleRefreshToken(req, res);
 
 /**
  * Retrieves the profile information of the authenticated user.

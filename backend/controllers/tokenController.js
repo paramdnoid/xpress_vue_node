@@ -1,6 +1,17 @@
 const jwt = require('jsonwebtoken');
 const db = require('../models/db');
 
+// Generates an access token for a given payload
+function generateAccessToken(payload) {
+  return jwt.sign(
+    payload,
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '30m' }
+  );
+}
+
+// Ensure you have JWT_EXPIRES_IN set in your .env (e.g., '115m')
+
 const MAX_DEVICES = 5;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -70,7 +81,8 @@ const refreshToken = async (req, res) => {
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     });
 
-    const accessToken = jwt.sign({ id: payload.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // Generate access token using shared helper
+    const accessToken = generateAccessToken({ id: payload.id });
 
     res.cookie('refresh_token', newRefreshToken, {
       httpOnly: true,
@@ -126,4 +138,10 @@ async function revokeAllUserTokens(userId) {
   await db.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId])
 }
 
-module.exports = { refreshToken, revokeToken, generateRefreshToken, revokeAllUserTokens };
+module.exports = {
+  refreshToken,
+  revokeToken,
+  generateRefreshToken,
+  revokeAllUserTokens,
+  generateAccessToken,
+};

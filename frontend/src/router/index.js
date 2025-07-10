@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { refreshAccessToken } from '@/utils/auth';
 import Verify from '@/views/auth/Verify.vue';
 import Landing from '@/views/Landing.vue';
 import Login from '@/views/auth/Login.vue';
@@ -28,18 +29,25 @@ const router = createRouter({
   linkExactActiveClass: 'exact-active',
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const defaultTitle = 'weppixpress';
-  document.title = to.meta.title ? `${to.meta.title} | ${defaultTitle}` : defaultTitle;
+  document.title = to.meta.title
+    ? `${to.meta.title} | ${defaultTitle}`
+    : defaultTitle;
 
-  const token = localStorage.getItem('accessToken');
-
-  if (to.meta.requiresAuth && !token) {
-    console.warn('Kein Token vorhanden – Weiterleitung zu Login');
-    next({ path: '/login', query: { redirect: to.fullPath } });
-  } else {
-    next();
+  // if route requires auth, ensure token is valid (or refresh it)
+  if (to.meta.requiresAuth) {
+    const ok = await refreshAccessToken();
+    console.log('Refresh erfolgreich?', ok);
+    
+    const token = localStorage.getItem('accessToken');
+    if (!ok || !token) {
+      console.warn('No valid token – redirecting to Login');
+      return next({ path: '/login', query: { redirect: to.fullPath } });
+    }
   }
+
+  next();
 });
 
 export default router
