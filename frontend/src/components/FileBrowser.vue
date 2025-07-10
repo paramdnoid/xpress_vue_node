@@ -1,9 +1,9 @@
 <template>
-  <div>
+  <div class="position-relative">
 
 
     <!-- Dropzone -->
-    <div class="dropzone border border-dashed rounded p-5 mb-4 text-center" @dragover.prevent
+    <div class="dropzone border border-dashed rounded p-5 mb-4 text-center d-none" @dragover.prevent
       @drop.prevent="handleDrop($event)">
       <p class="mb-0">📁 Drag & Drop files or folders here to upload</p>
     </div>
@@ -20,7 +20,7 @@
     </div>
 
     <!-- List / Grid view wie zuvor -->
-    <div v-if="viewMode === 'list'" class="table-responsive">
+    <div v-if="viewMode === 'list'" class="table-responsive ">
       <table class="table table-hover">
         <thead>
           <tr>
