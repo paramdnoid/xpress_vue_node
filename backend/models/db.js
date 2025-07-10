@@ -31,6 +31,9 @@ async function createUser(email, password, plan_id) {
       VALUES (?, ?, ?)
     `;
     const result = await query(sql, [email, password, plan_id]);
+
+
+    
     return { id: result.insertId, email, plan: plan_id };
   } catch (err) {
     console.error('createUser error:', err);

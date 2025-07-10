@@ -1,10 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
-const baseDir = path.join(__dirname, '../..', 'uploads');
+const baseDir = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../..', 'uploads'));
 
 const getFolderFiles = (req, res) => {
-  const baseDirUser = path.join(baseDir, req.user.id.toString());
+  const baseDirUser = ensureUserUploadDir(req.user.id);
   const relativePath = req.query.path || '';
   const targetPath = path.join(baseDirUser, relativePath);
 
@@ -24,5 +25,13 @@ const getFolderFiles = (req, res) => {
     res.status(500).json({ error: 'Failed to read directory' });
   }
 };
+
+function ensureUserUploadDir(userId) {
+  const userDir = path.join(baseDir, userId.toString());
+  if (!fs.existsSync(userDir)) {
+    fs.mkdirSync(userDir, { recursive: true });
+  }
+  return userDir;
+}
 
 module.exports = { getFolderFiles };
