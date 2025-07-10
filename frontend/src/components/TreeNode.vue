@@ -1,61 +1,59 @@
 <template>
-  <div v-if="node && node.type === 'folder'">
-    <a
-      class="nav-link"
-      href="#"
-      @click.prevent="loadChildren"
-      :data-bs-toggle="'collapse'"
-      :data-bs-target="'#collapse' + safeId"
-      :aria-expanded="isOpen.toString()"
-    >
-      {{ node.name }}
-      <span
-        v-if="hasSubfolders"
-        class="nav-link-toggle"
-      ></span>
-    </a>
+  <div>
+    <!-- Ordner -->
+    <div v-if="node.type === 'folder'">
+      <a
+        class="nav-link"
+        href="#"
+        @click.prevent="toggle"
+        :data-bs-toggle="'collapse'"
+        :data-bs-target="`#collapse_${safeId}`"
+        :aria-expanded="isOpen.toString()"
+      >
+        {{ node.name }}
+        <span class="nav-link-toggle"></span>
+      </a>
 
-    <nav
-      class="nav nav-vertical collapse"
-      :class="{ show: isOpen && node.children }"
-      :id="'collapse' + safeId"
-    >
-      <template v-if="node.children" v-for="child in node.children" :key="child.path">
-        <TreeNode v-if="child && child.type === 'folder'" :node="child" @select="$emit('select', $event)" />
-      </template>
-    </nav>
+      <nav
+        class="nav nav-vertical collapse"
+        :class="{ show: isOpen }"
+        :id="`collapse_${safeId}`"
+      >
+        <TreeNode
+          v-for="child in node.children"
+          :key="child.path"
+          :node="child"
+        />
+      </nav>
+    </div>
+
+    <!-- Datei -->
+    <div v-else>
+      <span class="nav-link disabled">{{ node.name }}</span>
+    </div>
   </div>
 </template>
 
 <script setup>
-const emit = defineEmits(['select'])
-
-import axios from '@/axios';
 import { ref, computed } from 'vue';
+import axios from '@/axios';
 
-const props = defineProps({
-  node: Object
-});
-
+const props = defineProps({ node: Object });
 const isOpen = ref(false);
 
-const loadChildren = async () => {
-  if (!props.node.children) {
-    const res = await axios.get('/files', { params: { path: props.node.path } });
-    props.node.children = res.data;
-  }
-  emit('select', props.node)
+const safeId = computed(() => props.node.path.replace(/[^\w-]/g, '_'));
+
+// Lazy load children
+const toggle = async () => {
   isOpen.value = !isOpen.value;
+
+  if (!props.node.children && isOpen.value && props.node.type === 'folder') {
+    const res = await axios.get('/files', {
+      params: { path: props.node.path }
+    });
+
+    // Füge dynamisch children hinzu
+    props.node.children = res.data.children;
+  }
 };
-
-// Make ID safe for collapse targets
-const safeId = computed(() => {
-  return props.node.path.replace(/[^\w-]/g, '_');
-});
-
-const hasSubfolders = computed(() =>
-  Array.isArray(props.node.children)
-    ? props.node.children.some(child => child?.type === 'folder')
-    : props.node.type === 'folder'
-);
 </script>

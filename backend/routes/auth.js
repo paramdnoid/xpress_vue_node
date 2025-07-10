@@ -38,8 +38,6 @@ router.post(
   register
 );
 
-
-
 /**
  * @route GET /me
  * @middleware verifyToken

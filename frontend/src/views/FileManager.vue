@@ -6,27 +6,29 @@
           Navigation
         </div>
         <nav class="nav nav-vertical px-2">
-          <TreeNode v-for="node in treeData" :key="node.path" :node="node" />
+          <TreeNode v-for="file in files" :key="file.path" :node="file" />
         </nav>
       </div>
     </template>
     <template #content>
-      <FileBrowser :nodes="treeData"/>
+
     </template>
   </SidebarLayout>
 </template>
 
 <script setup>
-import SidebarLayout from '@/layouts/SidebarLayout.vue'
-import FileBrowser from '@/components/FileBrowser.vue';
 import axios from '@/axios';
 import { onMounted, ref } from 'vue';
 import TreeNode from '@/components/TreeNode.vue';
+import SidebarLayout from '@/layouts/SidebarLayout.vue'
 
-const treeData = ref([]);
+const files = ref([]);
 
 onMounted(async () => {
   const res = await axios.get('/files');
-  treeData.value = res.data;
+
+  console.log(res.data.children);
+
+  files.value = res.data.children;
 });
 </script>
