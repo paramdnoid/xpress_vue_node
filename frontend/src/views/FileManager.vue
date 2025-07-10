@@ -11,13 +11,14 @@
       </div>
     </template>
     <template #content>
-      <div>content file-manager</div>
+      <FileBrowser :nodes="treeData"/>
     </template>
   </SidebarLayout>
 </template>
 
 <script setup>
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
+import FileBrowser from '@/components/FileBrowser.vue';
 import axios from '@/axios';
 import { onMounted, ref } from 'vue';
 import TreeNode from '@/components/TreeNode.vue';

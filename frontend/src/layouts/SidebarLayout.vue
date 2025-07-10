@@ -5,6 +5,14 @@
         <SidebarToggle />
         <div class="vr bg-gray-300 opacity-50 m-2"></div>
         <Breadcrumb />
+        <div class="btn-group ms-auto">
+          <div @click="viewMode = 'list'" :class="[viewMode === 'list' ? 'text-light' : 'text-muted']">
+            <iconify-icon icon="tabler:list" width="16" height="16"  />
+          </div>
+          <div @click="viewMode = 'grid'" :class="[viewMode === 'grid' ? 'text-light' : 'text-muted']">
+            <iconify-icon icon="tabler:grid-dots" width="16" height="16" />
+          </div>
+        </div>
       </div>
       <div class="d-flex flex-fill position-relative">
         <div class="position-absolute top-0 end-0 start-0 bottom-0 overflow-hidden">
@@ -38,6 +46,8 @@ import DefaultLayout from './DefaultLayout.vue'
 import SidebarToggle from '@/components/SidebarToggle.vue'
 import Breadcrumb from '../components/Breadcrumb.vue'
 
+const viewMode = ref('list')
+provide('viewMode', viewMode)
 const isSidebarOpen = ref(true)
 const isWide = ref(window.innerWidth >= 768)
 
@@ -96,6 +106,7 @@ onBeforeUnmount(() => {
   width: 100%;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   padding: 12px;
 }
 
