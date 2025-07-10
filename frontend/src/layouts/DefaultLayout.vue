@@ -1,12 +1,12 @@
 <template>
     <div class="page">
-        <header class="navbar navbar-expand-md d-print-none d-block" data-bs-theme="dark">
+        <header class="navbar navbar-expand-md d-print-none d-block pb-0" data-bs-theme="dark">
             <div class="container-fluid">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
                     aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
+                <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3 py-0">
                     <router-link :to="logoTargetPath" class="logo d-flex align-items-center text-decoration-none">
                         <img :src="logo" alt="" class="logo-img" />
                         <div class="logo-text ms-2">
@@ -247,7 +247,7 @@ useAutoLogout()
 
 /* main.scss */
 .navbar {
-    min-height: 2.4rem;
+    min-height: 2rem;
 
     .navbar-nav .nav-link:hover,
     .navbar-nav .nav-link:focus {

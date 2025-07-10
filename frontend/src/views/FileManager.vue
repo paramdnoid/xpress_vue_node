@@ -6,7 +6,7 @@
           Navigation
         </div>
         <nav class="nav nav-vertical px-2">
-
+          <TreeNode v-for="node in treeData" :key="node.path" :node="node" />
         </nav>
       </div>
     </template>

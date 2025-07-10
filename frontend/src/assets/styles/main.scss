@@ -10,7 +10,7 @@
 .navbar[data-bs-theme=dark] {
     color-scheme: dark;
     --tblr-bg-surface: var(--tblr-primary);
-    --tblr-navbar-border-color: rgba(255, 255, 255, 0.04);
+    --tblr-navbar-border-color: transparent;
 }
 
 body {
@@ -34,6 +34,3 @@ body {
 .btn-check:checked + .btn, :not(.btn-check) + .btn:active, .btn:first-child:active, .btn.active, .btn.show {
     border-color: transparent;
 }
-
-
-
