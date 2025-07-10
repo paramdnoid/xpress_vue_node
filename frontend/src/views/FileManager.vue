@@ -21,7 +21,7 @@
       </div>
     </template>
     <template #content>
-      <div>efex</div>
+      <div>content file-manager</div>
     </template>
   </SidebarLayout>
 </template>

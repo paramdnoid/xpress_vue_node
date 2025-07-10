@@ -21,9 +21,7 @@
       </div>
     </template>
     <template #content>
-      <div>
-
-      </div>
+      <div>content profile</div>
     </template>
   </SidebarLayout>
   

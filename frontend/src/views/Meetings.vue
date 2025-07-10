@@ -21,9 +21,7 @@
       </div>
     </template>
     <template #content>
-      <div>
-
-      </div>
+      <div>content meetings</div>
     </template>
   </SidebarLayout>
 </template>

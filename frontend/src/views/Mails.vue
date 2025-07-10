@@ -21,9 +21,7 @@
       </div>
     </template>
     <template #content>
-      <div>
-
-      </div>
+      <div>content mails</div>
     </template>
   </SidebarLayout>
 </template>
