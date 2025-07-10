@@ -12,12 +12,12 @@ const isSidebarOpen = inject('isSidebarOpen')
 <style scoped>
 .rotate-icon {
   transform: rotateY(180deg);
-  transition: transform 0.4s ease;
+  transition: transform 0.7s ease;
 }
 
 iconify-icon {
   margin-left: 4px;
-  transition: transform 0.4s ease;
+  transition: transform 0.7s ease;
   opacity: .7;
   display: flex;
   align-items: center;
@@ -25,7 +25,7 @@ iconify-icon {
 }
 
 iconify-icon:hover {
-  transition: transform 0.4s ease;
+  transition: transform 0.7s ease;
   cursor: pointer;
   opacity: .9;
 }

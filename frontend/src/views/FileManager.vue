@@ -24,7 +24,6 @@
       <div>efex</div>
     </template>
   </SidebarLayout>
-  
 </template>
 
 <script setup>
