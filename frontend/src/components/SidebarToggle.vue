@@ -1,11 +1,7 @@
 <template>
-  <div>
-    <button class="btn btn-sm btn-toolbar border-0 text-light bg-transparent ms-1" @click="toggleSidebarState">
-      <iconify-icon v-if="isSidebarOpen" icon="system-uicons:window-collapse-left" width="24"
-        height="24"></iconify-icon>
-      <iconify-icon v-else icon="system-uicons:window-collapse-right" width="24" height="24"></iconify-icon>
-    </button>
-  </div>
+    <div class="text-light" @click="toggleSidebarState">
+      <iconify-icon icon="system-uicons:window-collapse-right" width="24" height="24" :class="{ 'rotate-icon': isSidebarOpen }"></iconify-icon>
+    </div>
 </template>
 <script setup>
 import { inject } from 'vue'
@@ -13,5 +9,36 @@ import { inject } from 'vue'
 const toggleSidebarState = inject('toggleSidebarState')
 const isSidebarOpen = inject('isSidebarOpen')
 </script>
+<style scoped>
+.rotate-icon {
+  transform: rotateY(180deg);
+  transition: transform 0.4s ease;
+}
 
-<style scoped></style>
+iconify-icon {
+  margin-left: 4px;
+  transition: transform 0.4s ease;
+  opacity: .7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+iconify-icon:hover {
+  transition: transform 0.4s ease;
+  cursor: pointer;
+  opacity: .9;
+}
+
+@media (max-width: 768px) { 
+  iconify-icon {
+    margin-left: 8px;
+  }
+ }
+
+ @media (min-width: 992px) {
+    iconify-icon {
+    margin-left: 7px;
+  }
+ }
+</style>

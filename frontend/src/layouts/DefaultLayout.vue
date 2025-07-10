@@ -19,7 +19,7 @@
                     <div v-if="user?.email" class="nav-item dropdown">
                         <a href="#" class="nav-link d-flex lh-1 p-0 ps-2" data-bs-toggle="dropdown"
                             aria-label="Open user menu">
-                            <span class="avatar avatar-sm text-light">
+                            <span class="avatar avatar-sm text-primary rounded-circle">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-user">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -220,7 +220,7 @@ useAutoLogout()
 
 <style scoped>
 .logo-img {
-    height: 35px;
+    height: 38px;
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
 
@@ -245,13 +245,30 @@ useAutoLogout()
     }
 }
 
-.avatar {
-    --tblr-avatar-bg: hsl(192, 98%, 32%);
-}
+/* main.scss */
+.navbar {
+    min-height: 2.4rem;
 
-.avatar .icon {
-    width: 1.2rem;
-    height: 1.2rem;
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link:focus {
+        background-color: transparent !important;
+    }
+
+    .dropdown-item.active, .dropdown-item:active {
+        color: var(--tblr-gray-900);
+        text-decoration: none;
+        background-color: var(--tblr-dropdown-link-active-bg);
+    }
+
+    .avatar {
+        box-shadow: 0 1px 2px rgba(255, 255, 255, 1);
+        --tblr-avatar-bg: var(--tblr-navbar-color);
+
+        .icon {
+            width: 1.2rem;
+            height: 1.2rem;
+        }
+    }
 }
 
 .lh-xs {

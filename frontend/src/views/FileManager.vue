@@ -21,7 +21,7 @@
       </div>
     </template>
     <template #content>
-      <div class="p-2">efex</div>
+      <div>efex</div>
     </template>
   </SidebarLayout>
   
