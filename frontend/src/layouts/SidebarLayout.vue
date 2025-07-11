@@ -3,6 +3,12 @@
     <div class="page-body m-0">
       <div class="verti-dash-content">
         <SidebarToggle />
+        <div class="input-group input-group-sm me-3" style="max-width: 260px;">
+          <span class="input-group-text bg-transparent border-0 text-light px-2">
+            <iconify-icon icon="material-symbols:search" width="18" height="18" />
+          </span>
+          <input type="search" v-model="searchQuery" class="form-control form-control-sm bg-transparent text-light border-0" placeholder="Search..." />
+        </div>
         <Breadcrumb />
         <div class="ms-auto view-mode">
           <iconify-icon @click="viewMode = 'table'"
@@ -55,6 +61,7 @@ provide('viewMode', viewMode)
 const isSidebarOpen = ref(true)
 const isWide = ref(window.innerWidth >= 768)
 const totalSize = ref('')
+const searchQuery = ref('')
 
 const updateSidebarState = () => {
   const wide = window.innerWidth >= 768
@@ -144,6 +151,20 @@ onBeforeUnmount(() => {
   flex-direction: column;
   overflow-y: auto;
   padding: 10px 5px 25px;
+}
+
+
+.form-control.form-control-sm {
+  background-color: transparent;
+  color: var(--tblr-light);
+  opacity: .7;
+  font-size: .9rem !important;
+  border: 0;
+}
+
+.form-control.form-control-sm::placeholder {
+  color: rgba(255,255,255, .5);
+  font-size: .9rem;
 }
 
 @media (min-width: 576px) {

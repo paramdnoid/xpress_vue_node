@@ -75,6 +75,7 @@ const breadcrumbs = computed(() => {
     opacity: .6;
     font-weight: 300;
     color: var(--tblr-light);
+    font-size: .9rem;
   }
   
   &.active {

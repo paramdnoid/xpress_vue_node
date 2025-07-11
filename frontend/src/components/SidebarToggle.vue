@@ -1,6 +1,6 @@
 <template>
     <div class="text-light toggle-sidebar" @click="toggleSidebarState">
-      <iconify-icon icon="system-uicons:window-collapse-right" width="24" height="24" :class="{ 'rotate-icon': isSidebarOpen }"></iconify-icon>
+      <iconify-icon icon="flowbite:close-sidebar-alt-solid" width="24" height="24" :class="{ 'rotate-icon': isSidebarOpen }"></iconify-icon>
     </div>
 </template>
 <script setup>
@@ -22,12 +22,13 @@ const isSidebarOpen = inject('isSidebarOpen')
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-right: 9px;
 }
 
 .toggle-sidebar iconify-icon:hover {
   transition: transform 0.7s ease;
   cursor: pointer;
-  opacity: .9;
+  opacity: .7;
 }
 
 @media (max-width: 768px) { 
