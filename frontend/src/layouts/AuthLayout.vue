@@ -20,8 +20,8 @@
             </div>
         </div>
         <div class="col-xxl-9 col-lg-8 col-md-7">
-            <div class="auth-bg bg-light py-md-5 p-4 d-flex h-100">
-                <div class="bg-overlay-gradient"></div>
+            <div class="body-bg clip bg-light py-md-5 p-4 d-flex h-100">
+                <div class="body-bg-overlay"></div>
                 <div class="row justify-content-center g-0 align-items-center w-100 position-relative">
                     <div class="col-xl-5 col-lg-8">
                         <div class="frm-auth-logo pb-5 text-center">
@@ -95,26 +95,6 @@ const currentYear = new Date().getFullYear()
     font-weight: 700;
     line-height: 85px;
     margin-left: 5px;
-}
-
-.auth-bg {
-    background-image: url(../assets/images/bg-3.webp);
-    background-position: 50%;
-    background-repeat: no-repeat;
-    background-size: cover;
-    clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
-}
-
-.bg-overlay-gradient {
-    bottom: 0;
-    height: 100%;
-    left: 0;
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 100%;
-    background-color: var(--tblr-primary);
-    opacity: .85;
 }
 
 .frm-auth-logo {

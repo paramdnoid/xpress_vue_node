@@ -11,8 +11,12 @@ import logo from '@/assets/images/logo-light.svg'
 </script>
 
 <style>
-.landing .page-wrapper {
-    background: var(--tblr-primary);
+.landing {
+    .navbar[data-bs-theme=dark] {
+        color-scheme: dark;
+        --tblr-bg-surface: transparent;
+        --tblr-navbar-border-color: transparent;
+    }
 
     .page-body {
         display: flex;
@@ -20,7 +24,6 @@ import logo from '@/assets/images/logo-light.svg'
         align-items: center;
         justify-content: center;
         position: relative;
-        z-index: 1;
     }
 
     .logo-img {
@@ -28,8 +31,12 @@ import logo from '@/assets/images/logo-light.svg'
         filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
         transform: translateZ(0);
         will-change: filter;
-       }
+    }
 }
+
+
+
+
 
 
 

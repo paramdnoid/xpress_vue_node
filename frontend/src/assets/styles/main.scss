@@ -12,6 +12,8 @@
     color-scheme: dark;
     --tblr-bg-surface: var(--tblr-primary);
     --tblr-navbar-border-color: transparent;
+
+    z-index: 999;
 }
 
 body {
@@ -24,6 +26,29 @@ body {
         bottom: 0;
         left: 0;
         right: 0;
+    }
+
+    .body-bg {
+        background-image: url('@/assets/images/bg-3.webp');
+        background-position: 50%;
+        background-repeat: no-repeat;
+        background-size: cover;
+
+        &.clip {
+            clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
+        }
+    }
+
+    .body-bg-overlay {
+        bottom: 0;
+        height: 100%;
+        left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 100%;
+        background-color: var(--tblr-primary);
+        opacity: .85;
     }
 }
 

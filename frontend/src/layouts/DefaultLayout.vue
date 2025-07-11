@@ -1,5 +1,5 @@
 <template>
-    <div class="page" :class="{'landing': logoTargetPath !== '/'}">
+    <div class="page" :class="{'landing body-bg': logoTargetPath !== '/'}">
         <header class="navbar navbar-expand-md d-print-none d-block pb-0" data-bs-theme="dark">
             <div class="container-fluid">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
@@ -145,7 +145,7 @@
                 </div>
             </div>
         </header>
-        <div class="page-wrapper">
+        <div class="page-wrapper" :class="{'body-bg-overlay': logoTargetPath !== '/'}">
             <slot />
             <template v-if="logoTargetPath === '/'">
                 <Footer />
