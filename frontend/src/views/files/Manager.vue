@@ -2,8 +2,8 @@
   <SidebarLayout>
     <template #sidebar>
       <div>
-        <div @click.prevent="goToRoot" class="subheader mb-2 px-3 fw-bolder d-flex">
-          My Uploads <div class="ms-auto fw-lighter">{{ totalSize }}</div>
+        <div @click.prevent="goToRoot" class="subheader mb-2 px-3 fw-bolder d-flex cursor-pointer">
+          Uploads <div class="ms-auto fw-lighter">{{ totalSize }}</div>
         </div>
         <nav class="nav nav-vertical px-2">
           <Tree v-for="child in (rootNode?.children || []).filter(c => c.type === 'folder')" :key="child.path"
@@ -51,7 +51,7 @@
 
 <script setup>
 import axios from '@/axios';
-import { onMounted, onUpdated, ref, inject, computed } from 'vue';
+import { onMounted, onUpdated, ref, inject, computed, watch } from 'vue';
 import { useFileStore } from '@/stores/files';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
 import Tree from './Tree.vue';
@@ -60,7 +60,6 @@ import Table from './Table.vue'
 
 const isLoading = ref(true);
 const error = ref(null);
-
 const files = ref([]);
 const rootNode = ref(null);
 const fileStore = useFileStore();
@@ -70,6 +69,22 @@ const viewMode = inject('viewMode', ref('table'))
 const segments = computed(() =>
   fileStore.currentPath.split('/').filter(Boolean)
 )
+
+const loadCurrentFolder = async () => {
+  isLoading.value = true;
+  try {
+    const res = await axios.get('/files', {
+      params: { path: fileStore.currentPath }
+    });
+    files.value = res.data.children || [];
+    if (rootNode.value) rootNode.value.children = files.value;
+  } catch (err) {
+    error.value = 'Fehler beim Laden der Dateien';
+    console.error(err);
+  } finally {
+    isLoading.value = false;
+  }
+}
 
 const goTo = (index) => {
   const newPath = segments.value.slice(0, index + 1).join('/')
@@ -109,6 +124,8 @@ const handleDrop = async (event) => {
   const items = event.dataTransfer.items;
   if (!items) return;
 
+  uploadedTotal.value = 0;
+
   const fileEntries = [];
 
   const traverseEntry = async (entry, path = '') => {
@@ -132,6 +149,8 @@ const handleDrop = async (event) => {
     }
   }
 
+  let hadSuccess = false;
+
   for (const file of fileEntries) {
     const controller = new AbortController();
     const uploadItem = {
@@ -145,19 +164,24 @@ const handleDrop = async (event) => {
 
     const formData = new FormData();
     formData.append('files[]', file);
-    formData.append('paths[]', file.relativePath);
+    const uploadPath = fileStore.currentPath === '/' ? '' : fileStore.currentPath + '/';
+    formData.append('paths[]', uploadPath + file.relativePath);
+
+    let lastLoaded = 0;
 
     try {
       await axios.post('/files/upload', formData, {
         signal: controller.signal,
         onUploadProgress: (e) => {
+          const delta = e.loaded - lastLoaded;
+          lastLoaded = e.loaded;
           uploadItem.progress = Math.round((e.loaded * 100) / e.total);
-          uploadedTotal.value += e.loaded;
+          uploadedTotal.value += delta;
           totalSize.value = formatBytes(uploadedTotal.value);
         }
       });
       uploadItem.status = 'done';
-      await reloadFiles();
+      hadSuccess = true;
     } catch (err) {
       if (controller.signal.aborted) {
         uploadItem.status = 'cancelled';
@@ -166,6 +190,10 @@ const handleDrop = async (event) => {
         console.error(err);
       }
     }
+  }
+
+  if (hadSuccess) {
+    await loadCurrentFolder();
   }
 };
 
@@ -216,9 +244,6 @@ const reloadFiles = async () => {
 
 onMounted(async () => {
   try {
-    isLoading.value = true;
-    const res = await axios.get('/files');
-    files.value = res.data.children;
     rootNode.value = {
       name: 'root',
       path: '/',
@@ -232,8 +257,6 @@ onMounted(async () => {
   } catch (err) {
     error.value = 'Fehler beim Laden der Dateien';
     console.error(err);
-  } finally {
-    isLoading.value = false;
   }
 });
 
@@ -241,6 +264,10 @@ onUpdated(() => {
   const el = document.querySelector('.breadcrumb-wrapper');
   if (el) el.scrollLeft = el.scrollWidth;
 });
+
+watch(() => fileStore.currentPath, async (newPath) => {
+  if (newPath !== null) await loadCurrentFolder();
+}, { immediate: true });
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';

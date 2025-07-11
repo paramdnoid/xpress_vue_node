@@ -43,42 +43,16 @@
 </template>
 
 <script setup>
-import { watch, ref } from 'vue'
 import axios from '@/axios'
+import { watch, computed } from 'vue'
 import { useFileStore } from '@/stores/files'
 import { getFileIcon } from '@/utils/fileIcon'
 
 const props = defineProps(['files'])
 const fileStore = useFileStore()
-const files = ref([])
-
-watch(() => props.files, (newFiles) => {
-  files.value = newFiles
-}, { immediate: true })
+const files = computed(() => props.files)
 
 const emit = defineEmits(['row-click', 'delete'])
-const loadFiles = async (path) => {
-  const res = await axios.get('/files', { params: { path } })
-  const children = res.data.children || []
-  children.sort((a, b) => {
-    if (a.type === b.type) return a.name.localeCompare(b.name)
-    return a.type === 'folder' ? -1 : 1
-  })
-  files.value = children
-
-  children.forEach(file => {
-    if (file.type === 'folder' && file.size === null) {
-      axios.get('/folder-size', { params: { path: file.path } })
-        .then(res => {
-          file.size = res.data.size
-          files.value = [...files.value];
-        })
-        .catch(() => {
-          file.size = '—'
-        })
-    }
-  })
-}
 
 const handleClick = (file) => {
   if (file.type === 'folder') {
@@ -104,6 +78,10 @@ const deleteFile = (file) => {
   };
   emit('delete', newFile);
 };
+
+const loadFiles = async (path) => {
+  await fileStore.loadFiles(path)
+}
 
 watch(() => fileStore.currentPath, (newPath) => {
   if (newPath) loadFiles(newPath)

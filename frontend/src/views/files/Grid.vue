@@ -30,33 +30,17 @@
 </template>
 
 <script setup>
-import { watch, ref } from 'vue'
 import axios from '@/axios'
+import { watch, ref, computed } from 'vue'
 import { useFileStore } from '@/stores/files'
 import { getFileIcon } from '@/utils/fileIcon'
 
 const isLoading = ref(false);
 const props = defineProps(['files'])
+const files = computed(() => props.files)
 const fileStore = useFileStore()
 
 const emit = defineEmits(['row-click'])
-
-const loadFiles = async (path) => {
-  isLoading.value = true;
-  try {
-    const res = await axios.get('/files', { params: { path } });
-    const children = res.data.children || [];
-    children.sort((a, b) => {
-      if (a.type === b.type) return a.name.localeCompare(b.name);
-      return a.type === 'folder' ? -1 : 1;
-    });
-    // We keep files reactive if needed, but here we keep it as is
-  } catch (e) {
-    console.error('Fehler beim Laden der Dateien:', e);
-  } finally {
-    isLoading.value = false;
-  }
-}
 
 const handleClick = (file) => {
   if (file.type === 'folder') {
