@@ -10,10 +10,7 @@
           <th></th>
         </tr>
       </thead>
-      <tbody
-        @dragover.prevent
-        @drop.prevent="handleDropOnTable"
-      >
+      <tbody @dragover.prevent @drop.prevent="handleDropOnTable">
         <tr v-if="fileStore.currentPath && fileStore.currentPath !== '/'" @click="goBack" style="cursor: pointer">
           <td><iconify-icon icon="icon-park-solid:back" width="18" height="18"></iconify-icon></td>
           <td colspan="4">..</td>
@@ -31,7 +28,8 @@
               <button @click.stop class="btn btn-icon border-0 text-primary bg-transparent" title="Open">
                 <iconify-icon icon="mdi:eye-outline" />
               </button>
-              <button @click.stop="deleteFile(file)" class="btn btn-icon border-0 text-danger bg-transparent" title="Delete">
+              <button @click.stop="deleteFile(file)" class="btn btn-icon border-0 text-danger bg-transparent"
+                title="Delete">
                 <iconify-icon icon="mdi:trash-can-outline" />
               </button>
             </div>
@@ -108,7 +106,7 @@ const handleDropOnTable = async (event) => {
     formData.append('paths[]', `${fileStore.currentPath}/${file.relativePath}`.replace(/^\/+/, ''));
 
     try {
-      await fileStore.uploadFile(formData);
+      await fileStore.uploadFile(formData, file.name || file.relativePath);
     } catch (err) {
       console.error('Fehler beim Upload:', err);
     }

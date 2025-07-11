@@ -9,9 +9,7 @@
     <div v-if="isDropActive" class="dropzone-overlay">
       <div class="dropzone-text">Dateien hier ablegen zum Hochladen</div>
     </div>
-    <div v-if="fileStore.isLoading" class="text-center py-4 text-muted">Lade Inhalte…
-      <div v-if="fileStore.error" class="text-danger py-2">{{ fileStore.error }}</div>
-    </div>
+    <div v-if="fileStore.error" class="text-danger py-2">{{ fileStore.error }}</div>
     <div v-else class="row row-cards gap-0 z-3">
       <div v-if="fileStore.currentPath && fileStore.currentPath !== '/'" class="col-6 col-md-4 col-lg-3">
         <div class="card bg-transparent border-0 shadow-none" @click="goBack" style="cursor: pointer">

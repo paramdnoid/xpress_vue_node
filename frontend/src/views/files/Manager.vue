@@ -6,8 +6,7 @@
           Uploads <div class="ms-auto fw-lighter">{{ totalSize }}</div>
         </div>
         <nav class="nav nav-vertical px-2">
-          <Tree v-for="child in fileStore.files.filter(c => c.type === 'folder')" :key="child.path"
-            :node="child" />
+          <Tree v-for="child in fileStore.files.filter(c => c.type === 'folder')" :key="child.path" :node="child" />
         </nav>
       </div>
     </template>
@@ -40,10 +39,9 @@
               icon="material-symbols:grid-on" width="20" height="20"></iconify-icon>
           </div>
         </div>
-        <div v-if="fileStore.isLoading" class="text-center text-muted py-4">Lade Inhalte...</div>
-        <div v-else-if="fileStore.error" class="text-danger text-center py-4">{{ fileStore.error }}</div>
-        <Grid v-if="!fileStore.isLoading && !fileStore.error && viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
-        <Table v-else-if="!fileStore.isLoading && !fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
+        <div v-if="fileStore.error" class="text-danger text-center py-4">{{ fileStore.error }}</div>
+        <Grid v-if="!fileStore.error && viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
+        <Table v-else-if="!fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
       </div>
       <UploadToast />
     </template>
@@ -103,8 +101,6 @@ const handleDrop = async (event) => {
   const items = event.dataTransfer.items;
   if (!items) return;
 
-  uploadedTotal.value = 0;
-
   const fileEntries = [];
 
   const traverseEntry = async (entry, path = '') => {
@@ -128,42 +124,12 @@ const handleDrop = async (event) => {
     }
   }
 
-  let hadSuccess = false;
-
   for (const file of fileEntries) {
-    const controller = new AbortController();
-    const uploadItem = {
-      name: file.name,
-      relativePath: file.relativePath,
-      progress: 0,
-      status: 'uploading',
-      controller,
-      _file: file
-    };
-
     const formData = new FormData();
     formData.append('files[]', file);
     const uploadPath = fileStore.currentPath === '/' ? '' : fileStore.currentPath + '/';
     formData.append('paths[]', uploadPath + file.relativePath);
-
-    let lastLoaded = 0;
-
-    try {
-      await fileStore.uploadFile(formData);
-      uploadItem.status = 'done';
-      hadSuccess = true;
-    } catch (err) {
-      if (controller.signal.aborted) {
-        uploadItem.status = 'cancelled';
-      } else {
-        uploadItem.status = 'error';
-        console.error(err);
-      }
-    }
-  }
-
-  if (hadSuccess) {
-    await loadCurrentFolder();
+    fileStore.uploadFile(formData, file.relativePath);
   }
 };
 
@@ -188,7 +154,7 @@ const resumeUpload = async (item) => {
   formData.append('paths[]', item.relativePath);
 
   try {
-    await fileStore.uploadFile(formData);
+    await fileStore.uploadFile(formData, file.name || file.relativePath);
     item.status = 'done';
     await loadCurrentFolder();
   } catch (err) {

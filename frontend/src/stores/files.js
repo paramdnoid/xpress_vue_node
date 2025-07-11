@@ -7,7 +7,6 @@ export const useFileStore = defineStore('file', () => {
   const setCurrentPath = (path) => { currentPath.value = path || '/'; };
 
   const files = ref([]);
-  const isLoading = ref(false);
   const error = ref(null);
   const success = ref(null);
 
@@ -15,7 +14,6 @@ export const useFileStore = defineStore('file', () => {
   let isUploading = false;
 
   const loadFiles = async (path = currentPath.value) => {
-    isLoading.value = true;
     error.value = null;
     success.value = null;
     try {
@@ -23,8 +21,6 @@ export const useFileStore = defineStore('file', () => {
       files.value = response.data.children || [];
     } catch {
       error.value = 'Fehler beim Laden der Dateien';
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -72,6 +68,10 @@ export const useFileStore = defineStore('file', () => {
   };
 
   const enqueueUpload = (formData, name) => {
+    if (!name) {
+      const f = formData.get('file');
+      name = f?.name || 'Datei';
+    }
     const id = Date.now() + Math.random().toString(16).slice(2);
     const controller = new AbortController();
     uploadQueue.value.push({
@@ -155,7 +155,7 @@ export const useFileStore = defineStore('file', () => {
     setCurrentPath,
     files,
     loadFiles,
-    isLoading,
+
     error,
     success,
     uploadFile,

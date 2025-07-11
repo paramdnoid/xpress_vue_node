@@ -2,15 +2,9 @@
   <div>
     <!-- Ordner -->
     <div v-if="node && node.type === 'folder'">
-      <a class="nav-link"
-         href="#"
-         @click.prevent="toggle"
-         :data-bs-toggle="'collapse'"
-         :data-bs-target="`#collapse_${safeId}`"
-         :aria-expanded="isOpen.toString()"
-         @dragover.prevent
-         @drop.prevent="handleDropOnFolder"
-      >
+      <a class="nav-link" href="#" @click.prevent="toggle" :data-bs-toggle="'collapse'"
+        :data-bs-target="`#collapse_${safeId}`" :aria-expanded="isOpen.toString()" @dragover.prevent
+        @drop.prevent="handleDropOnFolder">
         {{ node.name }}
         <span v-if="loading" class="spinner-border spinner-border-sm ms-auto" role="status"></span>
         <span v-else class="nav-link-toggle"></span>
@@ -18,7 +12,8 @@
 
       <transition name="tree-slide">
         <nav v-show="isOpen" class="nav nav-vertical" :id="`collapse_${safeId}`">
-          <Tree v-for="child in (node.children || []).filter(c => c.type === 'folder')" :key="child.path" :node="child" />
+          <Tree v-for="child in (node.children || []).filter(c => c.type === 'folder')" :key="child.path"
+            :node="child" />
         </nav>
       </transition>
     </div>
@@ -91,7 +86,7 @@ const handleDropOnFolder = async (event) => {
     formData.append('paths[]', `${props.node.path}/${file.relativePath}`.replace(/^\/+/, ''));
 
     try {
-      await fileStore.uploadFile(formData);
+      await fileStore.uploadFile(formData, file.name || file.relativePath);
     } catch (err) {
       console.error('Fehler beim Upload:', err);
     }
