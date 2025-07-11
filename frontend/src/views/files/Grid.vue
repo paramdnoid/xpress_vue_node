@@ -1,6 +1,6 @@
 <template>
   <div
-    class="position-relative z-3"
+    class="position-relative z-1"
     @dragover.prevent
     @drop.prevent="handleDrop"
     @dragleave.prevent="isDropActive = false"
@@ -9,8 +9,7 @@
     <div v-if="isDropActive" class="dropzone-overlay">
       <div class="dropzone-text">Dateien hier ablegen zum Hochladen</div>
     </div>
-    <div v-if="fileStore.isLoading" class="text-center py-4 text-muted">
-      Lade Inhalte…
+    <div v-if="fileStore.isLoading" class="text-center py-4 text-muted">Lade Inhalte…
       <div v-if="fileStore.error" class="text-danger py-2">{{ fileStore.error }}</div>
     </div>
     <div v-else class="row row-cards gap-0 z-3">

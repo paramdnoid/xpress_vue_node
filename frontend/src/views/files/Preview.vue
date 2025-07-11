@@ -5,7 +5,7 @@
     </template>
 
     <template v-else-if="fileType.startsWith('video')">
-      <img :src="`/api/thumbs/${filename}`" style="max-width: 200px; max-height: 200px;" class="rounded shadow" />
+      <img :src="`/thumbs/${filename}`" style="max-width: 200px; max-height: 200px;" class="rounded shadow" />
     </template>
 
     <template v-else-if="fileType === 'application/pdf'">
@@ -24,12 +24,12 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import axios from 'axios'
+import axios from '@/axios'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const filename = route.params.filename
-const previewUrl = `/api/preview/${filename}`
+const previewUrl = `/preview/${filename}`
 
 const fileType = ref('')
 const textContent = ref('')

@@ -45,6 +45,7 @@
         <Grid v-if="!fileStore.isLoading && !fileStore.error && viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
         <Table v-else-if="!fileStore.isLoading && !fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
       </div>
+      <UploadToast />
     </template>
   </SidebarLayout>
 </template>
@@ -53,6 +54,7 @@
 import { onMounted, onUpdated, ref, inject, computed, watch } from 'vue';
 import { useFileStore } from '@/stores/files';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
+import UploadToast from '@/components/UploadToast.vue';
 import Tree from './Tree.vue';
 import Grid from './Grid.vue'
 import Table from './Table.vue'
