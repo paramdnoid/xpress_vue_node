@@ -15,7 +15,7 @@
       <div class="card bg-transparent border-0 shadow-none" @click="handleClick(file)" style="cursor: pointer">
         <div class="card-body text-center">
           <div class="mb-2 text-warning d-flex align-items-center justify-content-center">
-            <iconify-icon :icon="getFileIcon(file)" class="icon icon-lg" />
+            <iconify-icon :icon="getFileIcon(file)" width="24" height="24" />
           </div>
           <div class="fw-bold">{{ file.name }}</div>
           <small>{{ file.updated }}</small>
@@ -38,11 +38,6 @@ import { getFileIcon } from '@/utils/fileIcon'
 const isLoading = ref(false);
 const props = defineProps(['files'])
 const fileStore = useFileStore()
-const files = ref([])
-
-watch(() => props.files, (newFiles) => {
-  files.value = newFiles
-}, { immediate: true })
 
 const emit = defineEmits(['row-click'])
 
@@ -55,7 +50,7 @@ const loadFiles = async (path) => {
       if (a.type === b.type) return a.name.localeCompare(b.name);
       return a.type === 'folder' ? -1 : 1;
     });
-    files.value = children;
+    // We keep files reactive if needed, but here we keep it as is
   } catch (e) {
     console.error('Fehler beim Laden der Dateien:', e);
   } finally {

@@ -47,7 +47,7 @@
 
 <script setup>
 import axios from '@/axios';
-import { onMounted, ref, inject, computed } from 'vue';
+import { onMounted, onUpdated, ref, inject, computed } from 'vue';
 import { useFileStore } from '@/stores/files';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
 import Tree from './Tree.vue';
@@ -97,6 +97,11 @@ onMounted(async () => {
     isLoading.value = false;
   }
 });
+
+onUpdated(() => {
+  const el = document.querySelector('.breadcrumb-wrapper');
+  if (el) el.scrollLeft = el.scrollWidth;
+});
 </script>
 
 <style>
@@ -122,12 +127,19 @@ onMounted(async () => {
 .breadcrumb-wrapper {
   max-width: 100%;
   overflow-x: auto;
+  scroll-behavior: smooth;
 }
 
 .breadcrumb-item a {
     text-decoration: none !important;
     cursor: pointer;
 } 
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: '>';
+  margin: 0 0.25rem;
+  color: #aaa;
+}
 
 @media (max-width: 576px) {
   .breadcrumb {

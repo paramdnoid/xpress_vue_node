@@ -16,7 +16,7 @@
           <td colspan="4">..</td>
         </tr>
         <tr v-for="file in files" :key="file.name" @click="handleClick(file)" style="cursor: pointer">
-          <td><iconify-icon :icon="getFileIcon(file)" class="icon text-primary" /></td>
+          <td><iconify-icon :icon="getFileIcon(file)" class="icon text-primary" width="24" height="24" /></td>
           <td>{{ file.name }}</td>
           <td class="text-center">
             <span v-if="file.size !== null">{{ file.size }}</span>

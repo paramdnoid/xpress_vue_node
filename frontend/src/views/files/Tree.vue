@@ -45,7 +45,6 @@ const toggle = async () => {
         params: { path: props.node.path }
       });
       props.node.children = res.data.children
-        .filter(child => child.type === 'folder')
         .map(child => ({
           ...child,
           size: child.size || null,
