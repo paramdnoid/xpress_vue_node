@@ -40,6 +40,7 @@ import { ref, computed } from 'vue';
 import { useFileStore } from '@/stores/files';
 import axios from '@/axios';
 
+const emit = defineEmits(['row-click']);
 const fileStore = useFileStore();
 const props = defineProps({ node: Object });
 const isOpen = ref(false);
@@ -49,14 +50,19 @@ const safeId = computed(() => props.node.path.replace(/[^\w-]/g, '_'));
 // Lazy load children & update breadcrumb
 const toggle = async () => {
   isOpen.value = !isOpen.value;
-
   if (!props.node.children && isOpen.value && props.node.type === 'folder') {
     loading.value = true;
     try {
       const res = await axios.get('/files', {
         params: { path: props.node.path }
       });
-      props.node.children = res.data.children;
+      props.node.children = res.data.children
+        .filter(child => child.type === 'folder')
+        .map(child => ({
+          ...child,
+          size: child.size || null,
+          updated: child.updated || null
+        }));
       fileStore.setCurrentPath(props.node.path); // Breadcrumb aktualisieren
     } finally {
       loading.value = false;

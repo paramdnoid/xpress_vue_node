@@ -1,5 +1,5 @@
 <template>
-  <ol class="breadcrumb breadcrumb-muted" aria-label="breadcrumbs">
+  <ol class="breadcrumb breadcrumb-muted d-none d-md-flex" aria-label="breadcrumbs">
     <template v-if="isFileManager">
       <li class="breadcrumb-item">
         <a href="#" @click.prevent="goTo(-1)">File Manager</a>
@@ -65,13 +65,27 @@ const breadcrumbs = computed(() => {
 .breadcrumb-item {
   font-weight: 300 !important;
   
+  &::before {
+    opacity: 1;
+    font-weight: 300;
+    color: var(--tblr-light) !important;
+  }
+  
   a {
-    color: var(--tblr-gray-200) !important;
-    font-weight: 300 !important;
+    opacity: .6;
+    font-weight: 300;
+    color: var(--tblr-light);
   }
   
   &.active {
-    color: var(--tblr-light) !important;
+    opacity: 1;
+    font-weight: 300;
+    color: var(--tblr-light);
+  }
+
+  a:hover {
+    text-decoration: none;
+    opacity: .5;
   }
 }
 </style>

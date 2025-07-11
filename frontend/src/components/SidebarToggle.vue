@@ -1,5 +1,5 @@
 <template>
-    <div class="text-light" @click="toggleSidebarState">
+    <div class="text-light toggle-sidebar" @click="toggleSidebarState">
       <iconify-icon icon="system-uicons:window-collapse-right" width="24" height="24" :class="{ 'rotate-icon': isSidebarOpen }"></iconify-icon>
     </div>
 </template>
@@ -15,30 +15,30 @@ const isSidebarOpen = inject('isSidebarOpen')
   transition: transform 0.7s ease;
 }
 
-iconify-icon {
+.toggle-sidebar iconify-icon {
   margin-left: 4px;
   transition: transform 0.7s ease;
-  opacity: .7;
+  opacity: .9;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-iconify-icon:hover {
+.toggle-sidebar iconify-icon:hover {
   transition: transform 0.7s ease;
   cursor: pointer;
   opacity: .9;
 }
 
 @media (max-width: 768px) { 
-  iconify-icon {
+  .toggle-sidebar iconify-icon {
     margin-left: 8px;
   }
  }
 
  @media (min-width: 992px) {
-    iconify-icon {
-    margin-left: 7px;
-  }
+    .toggle-sidebar iconify-icon {
+      margin-left: 7px;
+    }
  }
 </style>

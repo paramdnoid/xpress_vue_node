@@ -3,16 +3,17 @@
     <div class="page-body m-0">
       <div class="verti-dash-content">
         <SidebarToggle />
+        <div class="vr bg-gray-300 opacity-50 m-2"></div>
         <Breadcrumb />
         <div class="ms-auto view-mode">
           <iconify-icon @click="viewMode = 'table'"
-            :class="[viewMode === 'table' ? 'text-light' : 'text-light opacity-50']"
-            icon="material-symbols:event-list-outline-sharp" width="20" height="20"></iconify-icon>
+            :class="[viewMode === 'table' ? 'text-primary' : 'text-primary opacity-50']"
+            icon="material-symbols:event-list-outline-sharp" width="24" height="24"></iconify-icon>
           <iconify-icon @click="viewMode = 'grid'"
-            :class="[viewMode === 'grid' ? 'text-light' : 'text-light opacity-50']" icon="material-symbols:grid-on"
-            width="20" height="20"></iconify-icon>
-          <div class="ms-2 text-light text-nowrap mt-1">
-            {{ totalSize }}
+            :class="[viewMode === 'grid' ? 'text-primary' : 'text-primary opacity-50']" icon="material-symbols:grid-on"
+            width="24" height="24"></iconify-icon>
+          <div class="ms-2 text-primary text-nowrap small mt-1">
+            Total: {{ totalSize }}
           </div>
         </div>
 
@@ -94,7 +95,6 @@ onBeforeUnmount(() => {
   align-items: center;
   padding-right: calc(var(--tblr-gutter-x) * 0.6);
   padding-left: calc(var(--tblr-gutter-x) * 0.3);
-  border-top: 1px solid rgba(255, 255, 255, .15);
   background: var(--tblr-primary);
 }
 
@@ -104,20 +104,9 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   justify-items: center;
-  padding: 0 5px;
-  font-size: .8rem;
-}
-
-.view-mode iconify-icon {
-  padding-top: 3px;
-  width: 20px !important;
-  height: 20px !important;
-  margin: 0 5px;
-
-  &:hover {
-    cursor: pointer;
-    opacity: .8;
-  }
+  background-color: rgba(255, 255, 255, .8);
+  border-radius: 5px;
+  padding-right: 5px;
 }
 
 .sidebar {

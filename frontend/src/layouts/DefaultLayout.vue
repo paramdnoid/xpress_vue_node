@@ -19,7 +19,7 @@
                     <div v-if="user?.email" class="nav-item dropdown">
                         <a href="#" class="nav-link d-flex lh-1 p-0 ps-2" data-bs-toggle="dropdown"
                             aria-label="Open user menu">
-                            <span class="avatar avatar-sm text-primary rounded-circle">
+                            <span class="avatar avatar-sm text-primary">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-user">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -261,12 +261,15 @@ useAutoLogout()
     }
 
     .avatar {
-        box-shadow: 0 1px 2px rgba(255, 255, 255, 1);
-        --tblr-avatar-bg: var(--tblr-navbar-color);
+        border: none;
+        background-color: transparent !important;
+        padding: 0 5px;
+        --tblr-avatar-bg: transparent !important;
 
         .icon {
             width: 1.2rem;
             height: 1.2rem;
+            color: var(--tblr-light);
         }
     }
 }

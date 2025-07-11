@@ -11,7 +11,7 @@
       </div>
     </template>
     <template #content>
-
+      <FileBrowser :files="files"/>
     </template>
   </SidebarLayout>
 </template>
@@ -22,6 +22,7 @@ import { onMounted, ref, computed } from 'vue';
 import { useFileStore } from '@/stores/files';
 import TreeNode from '@/components/TreeNode.vue';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
+import FileBrowser from '@/components/FileBrowser.vue';
 
 const files = ref([]);
 const fileStore = useFileStore();
