@@ -1,5 +1,5 @@
 <template>
-    <div class="page" :class="{'landing body-bg': logoTargetPath !== '/'}">
+    <div class="page" :class="{ 'landing body-bg': logoTargetPath !== '/' }">
         <header class="navbar navbar-expand-md d-print-none d-block pb-0" data-bs-theme="dark">
             <div class="container-fluid">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
@@ -30,7 +30,8 @@
                             </span>
                             <div class="d-none d-md-block ps-2 text-truncate" style="max-width: 140px;">
                                 <div class="text-light text-truncate w-100 overflow-hidden lh-xs">{{ user?.name }}</div>
-                                <div class="mt-1 small text-truncate w-100 overflow-hidden lh-xs" style="color: var(--tblr-gray-300);padding-right: 3px;">{{ user?.email }}</div>
+                                <div class="mt-1 small text-truncate w-100 overflow-hidden lh-xs"
+                                    style="color: var(--tblr-gray-300);padding-right: 3px;">{{ user?.email }}</div>
                             </div>
                         </a>
                         <UserDropdown />
@@ -145,9 +146,9 @@
                 </div>
             </div>
         </header>
-        <div class="page-wrapper" :class="{'body-bg-overlay': logoTargetPath !== '/'}">
+        <div class="page-wrapper" :class="{ 'body-bg-overlay': logoTargetPath !== '/' }">
             <slot />
-            <template v-if="logoTargetPath === '/'">
+            <template v-if="logoTargetPath !== '/'">
                 <Footer />
             </template>
         </div>
@@ -165,8 +166,8 @@ import { useAutoLogout } from '@/composables/useAutoLogout'
 
 // Assets and components
 import logo from '@/assets/images/logo-light.svg'
-import Footer from '@/components/layout/Footer.vue'
-import UserDropdown from '@/components/layout/UserDropdown.vue'
+import Footer from '@/components/Footer.vue'
+import UserDropdown from '@/components/UserDropdown.vue'
 
 const route = useRoute()
 const props = defineProps({ auth: Boolean })
@@ -174,7 +175,7 @@ const { user } = useAuthUser(props.auth)
 const logoTargetPath = ref(false)
 
 watchEffect(() => {
-  logoTargetPath.value = route.path === '/' ? '/file-manager' : '/'
+    logoTargetPath.value = route.path === '/' ? '/file-manager' : '/'
 })
 
 useAutoLogout()
@@ -216,7 +217,8 @@ useAutoLogout()
         background-color: transparent !important;
     }
 
-    .dropdown-item.active, .dropdown-item:active {
+    .dropdown-item.active,
+    .dropdown-item:active {
         color: var(--tblr-gray-900);
         text-decoration: none;
         background-color: var(--tblr-dropdown-link-active-bg);

@@ -24,7 +24,7 @@ const getFolderFiles = (req, res) => {
         size: item.isFile()
           ? filesize(stats.size)
           : filesize(getFolderSize(fullPath)),
-        updated: stats.mtime.toLocaleString('de-DE')
+        updated: `${String(stats.mtime.getDate()).padStart(2, '0')}.${String(stats.mtime.getMonth() + 1).padStart(2, '0')}.${stats.mtime.getFullYear()}`
       };
     });
 

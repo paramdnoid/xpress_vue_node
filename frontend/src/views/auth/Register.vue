@@ -49,7 +49,7 @@
 
 <script setup>
 import AuthLayout from '@/layouts/AuthLayout.vue'
-import PasswordField from '@/components/form/PasswordField.vue';
+import PasswordField from '@/components/PasswordField.vue';
 import { ref } from 'vue'
 import axios from '@/axios'
 

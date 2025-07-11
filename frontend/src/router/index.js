@@ -4,7 +4,7 @@ import Verify from '@/views/auth/Verify.vue';
 import Landing from '@/views/Landing.vue';
 import Login from '@/views/auth/Login.vue';
 import Register from '@/views/auth/Register.vue'
-import FileManager from '@/views/FileManager.vue';
+import FileManager from '@/views/files/Manager.vue';
 import Flows from '@/views/Flows.vue';
 import Mails from '@/views/Mails.vue';
 import Meetings from '@/views/Meetings.vue';

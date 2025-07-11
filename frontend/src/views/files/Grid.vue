@@ -1,6 +1,7 @@
 <template>
-  <div class="row row-cards gap-0">
-    <div v-if="fileStore.currentPath && fileStore.currentPath !== '/'" class="col-6 col-md-4 col-lg-3 col-xl-2">
+  <div v-if="isLoading" class="text-center py-4 text-muted">Lade Inhalte…</div>
+  <div v-else class="row row-cards gap-0">
+    <div v-if="fileStore.currentPath && fileStore.currentPath !== '/'" class="col-6 col-md-4 col-lg-3">
       <div class="card bg-transparent border-0 shadow-none" @click="goBack" style="cursor: pointer">
         <div class="card-body text-center">
           <div class="text-muted pt-3 mb-2">
@@ -10,7 +11,7 @@
         </div>
       </div>
     </div>
-    <div v-for="file in files" :key="file.name" class="col-6 col-md-4 col-lg-3 col-xl-2">
+    <div v-for="file in files" :key="file.name" class="col-6 col-md-4 col-lg-3">
       <div class="card bg-transparent border-0 shadow-none" @click="handleClick(file)" style="cursor: pointer">
         <div class="card-body text-center">
           <div class="mb-2 text-warning d-flex align-items-center justify-content-center">
@@ -20,7 +21,7 @@
           <small>{{ file.updated }}</small>
           <div class="text-muted small">
             <span v-if="file.size !== null">{{ file.size }}</span>
-            <span v-else class="spinner-border spinner-border-sm text-muted" role="status" aria-hidden="true"></span>
+            <span v-else class="text-muted">…</span>
           </div>
         </div>
       </div>
@@ -34,6 +35,7 @@ import axios from '@/axios'
 import { useFileStore } from '@/stores/files'
 import { getFileIcon } from '@/utils/fileIcon'
 
+const isLoading = ref(false);
 const props = defineProps(['files'])
 const fileStore = useFileStore()
 const files = ref([])
@@ -45,13 +47,20 @@ watch(() => props.files, (newFiles) => {
 const emit = defineEmits(['row-click'])
 
 const loadFiles = async (path) => {
-  const res = await axios.get('/files', { params: { path } })
-  const children = res.data.children || []
-  children.sort((a, b) => {
-    if (a.type === b.type) return a.name.localeCompare(b.name)
-    return a.type === 'folder' ? -1 : 1
-  })
-  files.value = children
+  isLoading.value = true;
+  try {
+    const res = await axios.get('/files', { params: { path } });
+    const children = res.data.children || [];
+    children.sort((a, b) => {
+      if (a.type === b.type) return a.name.localeCompare(b.name);
+      return a.type === 'folder' ? -1 : 1;
+    });
+    files.value = children;
+  } catch (e) {
+    console.error('Fehler beim Laden der Dateien:', e);
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 const handleClick = (file) => {

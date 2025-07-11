@@ -5,7 +5,7 @@
     /* Replace the color value with your desired hue */
     --tblr-primary: hsl(192, 98%, 35%);
     --tblr-gutter-x: calc(var(--tblr-page-padding) * 2);
-    --text-lighter: 
+    --text-lighter:
 }
 
 .navbar[data-bs-theme=dark] {
@@ -19,6 +19,7 @@
 body {
     font-family: 'Nunito', sans-serif;
     position: relative;
+
     #app,
     .page {
         position: fixed;
@@ -29,7 +30,7 @@ body {
     }
 
     .body-bg {
-        background-image: url('@/assets/images/bg-3.webp');
+        background-image: url('@/assets/images/bg-3.jpg');
         background-position: 50%;
         background-repeat: no-repeat;
         background-size: cover;
@@ -52,11 +53,16 @@ body {
     }
 }
 
-.form-control:focus, .form-control:active {
+.form-control:focus,
+.form-control:active {
     box-shadow: none;
     border-color: var(--tblr-primary)
 }
 
-.btn-check:checked + .btn, :not(.btn-check) + .btn:active, .btn:first-child:active, .btn.active, .btn.show {
+.btn-check:checked+.btn,
+:not(.btn-check)+.btn:active,
+.btn:first-child:active,
+.btn.active,
+.btn.show {
     border-color: transparent;
 }

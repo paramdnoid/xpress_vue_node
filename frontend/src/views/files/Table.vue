@@ -1,6 +1,6 @@
 <template>
-  <div class="table-responsive">
-    <table class="table table-vcenter">
+  <div class="table-responsive px-2">
+    <table class="table table-hover table-vcenter">
       <thead>
         <tr>
           <th>Type</th>
@@ -12,7 +12,7 @@
       </thead>
       <tbody>
         <tr v-if="fileStore.currentPath && fileStore.currentPath !== '/'" @click="goBack" style="cursor: pointer">
-          <td><iconify-icon icon="material-symbols-light:arrow-back-ios" width="24" height="24" /></td>
+          <td><iconify-icon icon="icon-park-solid:back" width="18" height="18"></iconify-icon></td>
           <td colspan="4">..</td>
         </tr>
         <tr v-for="file in files" :key="file.name" @click="handleClick(file)" style="cursor: pointer">
@@ -20,15 +20,15 @@
           <td>{{ file.name }}</td>
           <td class="text-center">
             <span v-if="file.size !== null">{{ file.size }}</span>
-            <span v-else class="spinner-border spinner-border-sm text-muted" role="status" aria-hidden="true"></span>
+            <span v-else class="text-muted">…</span>
           </td>
           <td class="text-center">{{ file.updated }}</td>
           <td>
             <div class="d-flex gap-1 align-items-center">
-              <button class="btn btn-icon border-0 text-primary bg-transparent" title="Open">
+              <button @click.stop class="btn btn-icon border-0 text-primary bg-transparent" title="Open">
                 <iconify-icon icon="mdi:eye-outline" />
               </button>
-              <button class="btn btn-icon border-0 text-danger bg-transparent" title="Delete">
+              <button @click.stop class="btn btn-icon border-0 text-danger bg-transparent" title="Delete">
                 <iconify-icon icon="mdi:trash-can-outline" />
               </button>
             </div>
@@ -57,11 +57,6 @@ const emit = defineEmits(['row-click'])
 const loadFiles = async (path) => {
   const res = await axios.get('/files', { params: { path } })
   const children = res.data.children || []
-  children.forEach(file => {
-    if (file.type === 'folder' && file.size === null) {
-      file.size = null
-    }
-  })
   children.sort((a, b) => {
     if (a.type === b.type) return a.name.localeCompare(b.name)
     return a.type === 'folder' ? -1 : 1
@@ -73,6 +68,7 @@ const loadFiles = async (path) => {
       axios.get('/folder-size', { params: { path: file.path } })
         .then(res => {
           file.size = res.data.size
+          files.value = [...files.value];
         })
         .catch(() => {
           file.size = '—'

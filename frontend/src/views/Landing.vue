@@ -28,9 +28,14 @@ import logo from '@/assets/images/logo-light.svg'
 
     .logo-img {
         height: 400px;
-        filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+        filter: drop-shadow(2px 4px 6px rgba(0,0,0,.5));
         transform: translateZ(0);
         will-change: filter;
+        
+
+        svg {
+            fill: white;
+        }
     }
 }
 

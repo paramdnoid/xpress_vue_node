@@ -1,35 +1,23 @@
 <template>
   <div>
     <!-- Ordner -->
-    <div v-if="node.type === 'folder'">
-      <a
-        class="nav-link"
-        href="#"
-        @click.prevent="toggle"
-        :data-bs-toggle="'collapse'"
-        :data-bs-target="`#collapse_${safeId}`"
-        :aria-expanded="isOpen.toString()"
-      >
+    <div v-if="node && node.type === 'folder'">
+      <a class="nav-link" href="#" @click.prevent="toggle" :data-bs-toggle="'collapse'"
+        :data-bs-target="`#collapse_${safeId}`" :aria-expanded="isOpen.toString()">
         {{ node.name }}
         <span v-if="loading" class="spinner-border spinner-border-sm ms-auto" role="status"></span>
         <span v-else class="nav-link-toggle"></span>
       </a>
 
-      <nav
-        class="nav nav-vertical collapse"
-        :class="{ show: isOpen }"
-        :id="`collapse_${safeId}`"
-      >
-        <TreeNode
-          v-for="child in node.children"
-          :key="child.path"
-          :node="child"
-        />
-      </nav>
+      <transition name="tree-slide">
+        <nav v-show="isOpen" class="nav nav-vertical" :id="`collapse_${safeId}`">
+          <Tree v-for="child in node.children" :key="child.path" :node="child" />
+        </nav>
+      </transition>
     </div>
 
     <!-- Datei -->
-    <div v-else>
+    <div v-else-if="node">
       <span class="nav-link disabled">{{ node.name }}</span>
     </div>
   </div>
@@ -72,3 +60,25 @@ const toggle = async () => {
   }
 };
 </script>
+
+<style scoped>
+.tree-slide-enter-active,
+.tree-slide-leave-active {
+  transition: all 0.25s ease;
+}
+
+.tree-slide-enter-from,
+.tree-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+  max-height: 0;
+  overflow: hidden;
+}
+
+.tree-slide-enter-to,
+.tree-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 500px;
+}
+</style>
