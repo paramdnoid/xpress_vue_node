@@ -1,6 +1,6 @@
 <template>
     <div class="text-light toggle-sidebar" @click="toggleSidebarState">
-      <iconify-icon icon="flowbite:close-sidebar-alt-solid" width="24" height="24" :class="{ 'rotate-icon': isSidebarOpen }"></iconify-icon>
+      <iconify-icon icon="flowbite:open-sidebar-alt-solid" width="24" height="24" :class="{ 'rotate-icon': isSidebarOpen }"></iconify-icon>
     </div>
 </template>
 <script setup>

@@ -1,5 +1,5 @@
 <template>
-    <div class="page">
+    <div class="page" :class="{'landing': logoTargetPath !== '/'}">
         <header class="navbar navbar-expand-md d-print-none d-block pb-0" data-bs-theme="dark">
             <div class="container-fluid">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
@@ -8,7 +8,7 @@
                 </button>
                 <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3 py-0">
                     <router-link :to="logoTargetPath" class="logo d-flex align-items-center text-decoration-none">
-                        <img :src="logo" alt="" class="logo-img" />
+                        <img v-if="logoTargetPath === '/'" :src="logo" alt="" class="logo-img" />
                         <div class="logo-text ms-2">
                             <div class="brand-highlight">weppi</div>
                             <div class="logo-subtext">xpress.com</div>
@@ -128,54 +128,16 @@
                     <ul v-else class="navbar-nav">
                         <li class="nav-item">
                             <router-link to="/" class="nav-link" exact-active-class="active">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        class="icon icon-tabler icons-tabler-outline icon-tabler-home-2">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M5 12l-2 0l9 -9l9 9l-2 0" />
-                                        <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
-                                        <path d="M10 12h4v4h-4z" />
-                                    </svg>
-                                </span>
                                 <span class="nav-link-title">Home</span>
                             </router-link>
                         </li>
                         <li class="nav-item">
                             <router-link to="/" class="nav-link" exact-active-class="active">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-cart-dollar">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M4 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
-                                        <path d="M13 17h-7v-14h-2" />
-                                        <path d="M6 5l14 1l-.575 4.022m-4.925 2.978h-8.5" />
-                                        <path d="M21 15h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3h-2.5" />
-                                        <path d="M19 21v1m0 -8v1" />
-                                    </svg>
-                                </span>
                                 <span class="nav-link-title">Pricing</span>
                             </router-link>
                         </li>
                         <li class="nav-item">
                             <router-link to="/" class="nav-link" exact-active-class="active">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        class="icon icon-tabler icons-tabler-outline icon-tabler-forms">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M12 3a3 3 0 0 0 -3 3v12a3 3 0 0 0 3 3" />
-                                        <path d="M6 3a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3" />
-                                        <path d="M13 7h7a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-7" />
-                                        <path d="M5 7h-1a1 1 0 0 0 -1 1v8a1 1 0 0 0 1 1h1" />
-                                        <path d="M17 12h.01" />
-                                        <path d="M13 12h.01" />
-                                    </svg>
-                                </span>
                                 <span class="nav-link-title">Contact</span>
                             </router-link>
                         </li>
@@ -185,7 +147,7 @@
         </header>
         <div class="page-wrapper">
             <slot />
-            <template v-if="logoTargetPath !== '/'">
+            <template v-if="logoTargetPath === '/'">
                 <Footer />
             </template>
         </div>

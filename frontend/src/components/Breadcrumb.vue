@@ -72,16 +72,18 @@ const breadcrumbs = computed(() => {
   }
   
   a {
-    opacity: .6;
+    opacity: .99;
     font-weight: 300;
     color: var(--tblr-light);
     font-size: .9rem;
+    text-transform: uppercase;
   }
   
   &.active {
-    opacity: 1;
+    opacity: .6;
     font-weight: 300;
     color: var(--tblr-light);
+    text-transform: uppercase;
   }
 
   a:hover {
