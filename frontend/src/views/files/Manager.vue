@@ -6,7 +6,7 @@
           Uploads <div class="ms-auto fw-lighter">{{ totalSize }}</div>
         </div>
         <nav class="nav nav-vertical px-2">
-          <Tree v-for="child in (rootNode?.children || []).filter(c => c.type === 'folder')" :key="child.path"
+          <Tree v-for="child in files.filter(c => c.type === 'folder')" :key="child.path"
             :node="child" />
         </nav>
       </div>
@@ -77,7 +77,6 @@ const loadCurrentFolder = async () => {
       params: { path: fileStore.currentPath }
     });
     files.value = res.data.children || [];
-    if (rootNode.value) rootNode.value.children = files.value;
   } catch (err) {
     error.value = 'Fehler beim Laden der Dateien';
     console.error(err);
@@ -108,9 +107,6 @@ const confirmDelete = async (file) => {
   try {
     await axios.delete(`/files/delete/${encodeURIComponent(file.path)}`);
     files.value = files.value.filter(f => f.name !== file.name);
-    if (rootNode.value?.children) {
-      rootNode.value.children = rootNode.value.children.filter(f => f.name !== file.name);
-    }
     if (fileStore.files) {
       fileStore.files = fileStore.files.filter(f => f.name !== file.name);
     }
@@ -225,7 +221,7 @@ const resumeUpload = async (item) => {
       }
     });
     item.status = 'done';
-    await reloadFiles();
+    await loadCurrentFolder();
   } catch (err) {
     if (controller.signal.aborted) {
       item.status = 'cancelled';
@@ -236,19 +232,12 @@ const resumeUpload = async (item) => {
   }
 };
 
-const reloadFiles = async () => {
-  const res = await axios.get('/files');
-  files.value = res.data.children;
-  rootNode.value.children = files.value;
-};
-
 onMounted(async () => {
   try {
     rootNode.value = {
       name: 'root',
       path: '/',
       type: 'folder',
-      children: files.value,
     };
     fileStore.setCurrentPath('');
 

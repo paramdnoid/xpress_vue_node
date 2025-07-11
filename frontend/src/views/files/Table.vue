@@ -44,7 +44,7 @@
 
 <script setup>
 import axios from '@/axios'
-import { watch, computed } from 'vue'
+import { watch, computed, ref, onMounted } from 'vue'
 import { useFileStore } from '@/stores/files'
 import { getFileIcon } from '@/utils/fileIcon'
 
