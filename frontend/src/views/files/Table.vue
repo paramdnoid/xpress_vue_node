@@ -53,7 +53,7 @@ watch(() => props.files, (newFiles) => {
   files.value = newFiles
 }, { immediate: true })
 
-const emit = defineEmits(['row-click'])
+const emit = defineEmits(['row-click', 'delete'])
 const loadFiles = async (path) => {
   const res = await axios.get('/files', { params: { path } })
   const children = res.data.children || []
@@ -94,15 +94,12 @@ const goBack = () => {
   }
 }
 
-const deleteFile = async (file) => {
-  if (!confirm(`Delete "${file.name}"?`)) return;
-  try {
-    await axios.delete(`/files/delete/${encodeURIComponent(file.name)}`);
-    files.value = files.value.filter(f => f.name !== file.name);
-  } catch (err) {
-    alert('Deletion failed');
-    console.error(err);
-  }
+const deleteFile = (file) => {
+  const newFile = {
+    ...file,
+    path: file.path || `${fileStore.currentPath.replace(/\/$/, '')}/${file.name}`,
+  };
+  emit('delete', newFile);
 };
 
 watch(() => fileStore.currentPath, (newPath) => {

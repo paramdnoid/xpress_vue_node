@@ -39,8 +39,16 @@
       </div>
       <div v-if="isLoading" class="text-center text-muted py-4">Lade Inhalte...</div>
       <div v-else-if="error" class="text-danger text-center py-4">{{ error }}</div>
-      <Grid v-if="!isLoading && !error && viewMode === 'grid'" :files="files" />
-      <Table v-else-if="!isLoading && !error" :files="files" />
+
+      <div @dragover.prevent
+           @drop.prevent="handleDrop"
+           class="drop-zone border-dashed border border-secondary mb-2 p-4 text-center rounded">
+        <span class="text-muted">Dateien oder Ordner hierher ziehen, um sie hochzuladen</span>
+      </div>
+
+
+      <Grid v-if="!isLoading && !error && viewMode === 'grid'" :files="files" @delete="confirmDelete" />
+      <Table v-else-if="!isLoading && !error" :files="files" @delete="confirmDelete" />
     </template>
   </SidebarLayout>
 </template>
@@ -53,6 +61,7 @@ import SidebarLayout from '@/layouts/SidebarLayout.vue'
 import Tree from './Tree.vue';
 import Grid from './Grid.vue'
 import Table from './Table.vue'
+import Swal from 'sweetalert2';
 
 const isLoading = ref(true);
 const error = ref(null);
@@ -73,6 +82,145 @@ const goTo = (index) => {
 
 const goToRoot = () => {
   fileStore.setCurrentPath('/');
+};
+
+const confirmDelete = async (file) => {
+  const isFolder = file.type === 'folder';
+  const result = await Swal.fire({
+    title: isFolder ? 'Ordner löschen?' : 'Datei löschen?',
+    text: isFolder
+      ? `Möchtest du den Ordner "${file.name}" inklusive aller Inhalte wirklich löschen?`
+      : `Möchtest du "${file.name}" wirklich löschen?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Löschen',
+    cancelButtonText: 'Abbrechen',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await axios.delete(`/files/delete/${encodeURIComponent(file.path)}`);
+      files.value = files.value.filter(f => f.name !== file.name);
+      if (rootNode.value?.children) {
+        rootNode.value.children = rootNode.value.children.filter(f => f.name !== file.name);
+      }
+      if (fileStore.files) {
+        fileStore.files = fileStore.files.filter(f => f.name !== file.name);
+      }
+      Swal.fire('Gelöscht!', `${isFolder ? 'Ordner' : 'Datei'} "${file.name}" wurde gelöscht.`, 'success');
+    } catch (err) {
+      console.error(err);
+      Swal.fire('Fehler', `${isFolder ? 'Ordner' : 'Datei'} konnte nicht gelöscht werden.`, 'error');
+    }
+  }
+};
+
+
+const handleDrop = async (event) => {
+  const items = event.dataTransfer.items;
+  if (!items) return;
+
+  const fileEntries = [];
+
+  const traverseEntry = async (entry, path = '') => {
+    if (entry.isFile) {
+      const file = await new Promise(resolve => entry.file(resolve));
+      file.relativePath = path + file.name;
+      fileEntries.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise(resolve => reader.readEntries(resolve));
+      for (const child of entries) {
+        await traverseEntry(child, path + entry.name + '/');
+      }
+    }
+  };
+
+  for (let i = 0; i < items.length; i++) {
+    const entry = items[i].webkitGetAsEntry?.();
+    if (entry) {
+      await traverseEntry(entry);
+    }
+  }
+
+  for (const file of fileEntries) {
+    const controller = new AbortController();
+    const uploadItem = {
+      name: file.name,
+      relativePath: file.relativePath,
+      progress: 0,
+      status: 'uploading',
+      controller,
+      _file: file
+    };
+
+    const formData = new FormData();
+    formData.append('files[]', file);
+    formData.append('paths[]', file.relativePath);
+
+    try {
+      await axios.post('/files/upload', formData, {
+        signal: controller.signal,
+        onUploadProgress: (e) => {
+          uploadItem.progress = Math.round((e.loaded * 100) / e.total);
+        }
+      });
+      uploadItem.status = 'done';
+      await reloadFiles();
+    } catch (err) {
+      if (controller.signal.aborted) {
+        uploadItem.status = 'cancelled';
+      } else {
+        uploadItem.status = 'error';
+        console.error(err);
+      }
+    }
+  }
+};
+
+const cancelUpload = (item) => {
+  item.controller.abort();
+};
+
+const pauseUpload = (item) => {
+  item.controller.abort();
+  item.status = 'paused';
+};
+
+const resumeUpload = async (item) => {
+  const originalFile = item._file;
+  const controller = new AbortController();
+  item.controller = controller;
+  item.status = 'uploading';
+  item.progress = 0;
+
+  const formData = new FormData();
+  formData.append('files[]', originalFile);
+  formData.append('paths[]', item.relativePath);
+
+  try {
+    await axios.post('/files/upload', formData, {
+      signal: controller.signal,
+      onUploadProgress: (e) => {
+        item.progress = Math.round((e.loaded * 100) / e.total);
+      }
+    });
+    item.status = 'done';
+    await reloadFiles();
+  } catch (err) {
+    if (controller.signal.aborted) {
+      item.status = 'cancelled';
+    } else {
+      item.status = 'error';
+      console.error(err);
+    }
+  }
+};
+
+const reloadFiles = async () => {
+  const res = await axios.get('/files');
+  files.value = res.data.children;
+  rootNode.value.children = files.value;
 };
 
 onMounted(async () => {
@@ -171,5 +319,14 @@ onUpdated(() => {
   .breadcrumb-wrapper::-webkit-scrollbar {
     display: none; /* Chrome, Safari */
   }
+}
+
+.drop-zone {
+  border-width: 2px;
+  transition: background 0.2s ease-in-out;
+}
+.drop-zone:hover {
+  background: rgba(0, 123, 255, 0.05);
+  cursor: copy;
 }
 </style>
