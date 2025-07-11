@@ -18,7 +18,7 @@
           <td><iconify-icon icon="icon-park-solid:back" width="18" height="18"></iconify-icon></td>
           <td colspan="4">..</td>
         </tr>
-        <tr v-for="file in files" :key="file.name" @click="handleClick(file)" style="cursor: pointer">
+        <tr v-for="file in fileStore.files" :key="file.name" @click="handleClick(file)" style="cursor: pointer">
           <td><iconify-icon :icon="getFileIcon(file)" class="icon text-primary" width="24" height="24" /></td>
           <td>{{ file.name }}</td>
           <td class="text-center">
@@ -43,14 +43,10 @@
 </template>
 
 <script setup>
-import axios from '@/axios'
-import { watch, computed, ref, onMounted } from 'vue'
 import { useFileStore } from '@/stores/files'
 import { getFileIcon } from '@/utils/fileIcon'
 
-const props = defineProps(['files'])
 const fileStore = useFileStore()
-const files = computed(() => props.files)
 
 const emit = defineEmits(['row-click', 'delete'])
 
@@ -78,14 +74,6 @@ const deleteFile = (file) => {
   };
   emit('delete', newFile);
 };
-
-const loadFiles = async (path) => {
-  await fileStore.loadFiles(path)
-}
-
-watch(() => fileStore.currentPath, (newPath) => {
-  if (newPath) loadFiles(newPath)
-}, { immediate: true })
 
 const handleDropOnTable = async (event) => {
   const items = event.dataTransfer.items;
@@ -120,14 +108,14 @@ const handleDropOnTable = async (event) => {
     formData.append('paths[]', `${fileStore.currentPath}/${file.relativePath}`.replace(/^\/+/, ''));
 
     try {
-      await axios.post('/files/upload', formData);
+      await fileStore.uploadFile(formData);
     } catch (err) {
       console.error('Fehler beim Upload:', err);
     }
   }
 
-  // Optional: reload files after drop
-  loadFiles(fileStore.currentPath);
+  // Reload files after drop
+  await fileStore.loadFiles();
 };
 </script>
 

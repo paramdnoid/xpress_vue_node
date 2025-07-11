@@ -33,7 +33,6 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useFileStore } from '@/stores/files';
-import axios from '@/axios';
 
 const emit = defineEmits(['row-click']);
 const fileStore = useFileStore();
@@ -48,15 +47,8 @@ const toggle = async () => {
   if (!props.node.children && isOpen.value && props.node.type === 'folder') {
     loading.value = true;
     try {
-      const res = await axios.get('/files', {
-        params: { path: props.node.path }
-      });
-      props.node.children = res.data.children
-        .map(child => ({
-          ...child,
-          size: child.size || null,
-          updated: child.updated || null
-        }));
+      await fileStore.loadFiles(props.node.path);
+      props.node.children = fileStore.files.filter(c => c.type === 'folder' || c.type === 'file');
       fileStore.setCurrentPath(props.node.path); // Breadcrumb aktualisieren
     } finally {
       loading.value = false;
@@ -99,15 +91,14 @@ const handleDropOnFolder = async (event) => {
     formData.append('paths[]', `${props.node.path}/${file.relativePath}`.replace(/^\/+/, ''));
 
     try {
-      await axios.post('/files/upload', formData);
+      await fileStore.uploadFile(formData);
     } catch (err) {
       console.error('Fehler beim Upload:', err);
     }
   }
 
   // Optional: Reload folder view
-  await toggle(); // collapse
-  await toggle(); // re-expand and reload
+  await fileStore.loadFiles(props.node.path);
 };
 </script>
 

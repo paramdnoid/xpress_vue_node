@@ -6,7 +6,7 @@
           Uploads <div class="ms-auto fw-lighter">{{ totalSize }}</div>
         </div>
         <nav class="nav nav-vertical px-2">
-          <Tree v-for="child in files.filter(c => c.type === 'folder')" :key="child.path"
+          <Tree v-for="child in fileStore.files.filter(c => c.type === 'folder')" :key="child.path"
             :node="child" />
         </nav>
       </div>
@@ -40,17 +40,16 @@
               icon="material-symbols:grid-on" width="20" height="20"></iconify-icon>
           </div>
         </div>
-        <div v-if="isLoading" class="text-center text-muted py-4">Lade Inhalte...</div>
-        <div v-else-if="error" class="text-danger text-center py-4">{{ error }}</div>
-        <Grid v-if="!isLoading && !error && viewMode === 'grid'" :files="files" @delete="confirmDelete" />
-        <Table v-else-if="!isLoading && !error" :files="files" @delete="confirmDelete" />
+        <div v-if="fileStore.isLoading" class="text-center text-muted py-4">Lade Inhalte...</div>
+        <div v-else-if="fileStore.error" class="text-danger text-center py-4">{{ fileStore.error }}</div>
+        <Grid v-if="!fileStore.isLoading && !fileStore.error && viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
+        <Table v-else-if="!fileStore.isLoading && !fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
       </div>
     </template>
   </SidebarLayout>
 </template>
 
 <script setup>
-import axios from '@/axios';
 import { onMounted, onUpdated, ref, inject, computed, watch } from 'vue';
 import { useFileStore } from '@/stores/files';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
@@ -58,9 +57,6 @@ import Tree from './Tree.vue';
 import Grid from './Grid.vue'
 import Table from './Table.vue'
 
-const isLoading = ref(true);
-const error = ref(null);
-const files = ref([]);
 const rootNode = ref(null);
 const fileStore = useFileStore();
 const totalSize = ref('')
@@ -71,18 +67,7 @@ const segments = computed(() =>
 )
 
 const loadCurrentFolder = async () => {
-  isLoading.value = true;
-  try {
-    const res = await axios.get('/files', {
-      params: { path: fileStore.currentPath }
-    });
-    files.value = res.data.children || [];
-  } catch (err) {
-    error.value = 'Fehler beim Laden der Dateien';
-    console.error(err);
-  } finally {
-    isLoading.value = false;
-  }
+  await fileStore.loadFiles();
 }
 
 const goTo = (index) => {
@@ -105,11 +90,7 @@ const confirmDelete = async (file) => {
   if (!shouldDelete) return;
 
   try {
-    await axios.delete(`/files/delete/${encodeURIComponent(file.path)}`);
-    files.value = files.value.filter(f => f.name !== file.name);
-    if (fileStore.files) {
-      fileStore.files = fileStore.files.filter(f => f.name !== file.name);
-    }
+    await fileStore.deleteFile(file.path);
   } catch (err) {
     console.error(err);
     alert(`${isFolder ? 'Ordner' : 'Datei'} konnte nicht gelöscht werden.`);
@@ -166,16 +147,7 @@ const handleDrop = async (event) => {
     let lastLoaded = 0;
 
     try {
-      await axios.post('/files/upload', formData, {
-        signal: controller.signal,
-        onUploadProgress: (e) => {
-          const delta = e.loaded - lastLoaded;
-          lastLoaded = e.loaded;
-          uploadItem.progress = Math.round((e.loaded * 100) / e.total);
-          uploadedTotal.value += delta;
-          totalSize.value = formatBytes(uploadedTotal.value);
-        }
-      });
+      await fileStore.uploadFile(formData);
       uploadItem.status = 'done';
       hadSuccess = true;
     } catch (err) {
@@ -214,12 +186,7 @@ const resumeUpload = async (item) => {
   formData.append('paths[]', item.relativePath);
 
   try {
-    await axios.post('/files/upload', formData, {
-      signal: controller.signal,
-      onUploadProgress: (e) => {
-        item.progress = Math.round((e.loaded * 100) / e.total);
-      }
-    });
+    await fileStore.uploadFile(formData);
     item.status = 'done';
     await loadCurrentFolder();
   } catch (err) {
@@ -239,12 +206,12 @@ onMounted(async () => {
       path: '/',
       type: 'folder',
     };
-    fileStore.setCurrentPath('');
+    fileStore.setCurrentPath('/');
 
-    const size = await axios.get('/files/total-size');
-    totalSize.value = size.data.size || '—';
+    const size = await fileStore.getTotalSize();
+    totalSize.value = size || '—';
   } catch (err) {
-    error.value = 'Fehler beim Laden der Dateien';
+    fileStore.error = 'Fehler beim Laden der Dateien';
     console.error(err);
   }
 });
@@ -255,7 +222,7 @@ onUpdated(() => {
 });
 
 watch(() => fileStore.currentPath, async (newPath) => {
-  if (newPath !== null) await loadCurrentFolder();
+  if (newPath !== null) await fileStore.loadFiles();
 }, { immediate: true });
 
 function formatBytes(bytes) {
@@ -280,11 +247,11 @@ function formatBytes(bytes) {
 .view-mode iconify-icon {
   width: 20px !important;
   height: 20px !important;
+}
 
-  &:hover {
-    cursor: pointer;
-    opacity: .8;
-  }
+.view-mode iconify-icon:hover {
+  cursor: pointer;
+  opacity: .8;
 }
 
 .breadcrumb-wrapper {
