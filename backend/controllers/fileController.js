@@ -177,8 +177,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 const handleUpload = async (req, res) => {
   const baseDirUser = ensureUserUploadDir(req.user.id);
   const files = req.files;
-  console.log('REQ BODY:', req.body);
-  console.log('REQ FILES:', files.map(f => f.originalname));
   // read paths from body (may be string or array)
   let paths = req.body.paths || req.body['paths[]'];
   if (!paths) {
@@ -193,7 +191,7 @@ const handleUpload = async (req, res) => {
       const file = files[i];
       const relativePath = paths[i] || file.originalname;
       const fullPath = path.join(baseDirUser, relativePath);
-      console.log('→ Zielpfad:', fullPath);
+
       const dir = path.dirname(fullPath);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(fullPath, file.buffer);

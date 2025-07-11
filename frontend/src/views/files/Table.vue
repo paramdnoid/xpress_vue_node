@@ -1,5 +1,5 @@
 <template>
-  <div class="table-responsive px-2">
+  <div class="table-responsive px-2 h100 z-3">
     <table class="table table-hover table-vcenter">
       <thead>
         <tr>
@@ -10,7 +10,10 @@
           <th></th>
         </tr>
       </thead>
-      <tbody>
+      <tbody
+        @dragover.prevent
+        @drop.prevent="handleDropOnTable"
+      >
         <tr v-if="fileStore.currentPath && fileStore.currentPath !== '/'" @click="goBack" style="cursor: pointer">
           <td><iconify-icon icon="icon-park-solid:back" width="18" height="18"></iconify-icon></td>
           <td colspan="4">..</td>
@@ -105,6 +108,49 @@ const deleteFile = (file) => {
 watch(() => fileStore.currentPath, (newPath) => {
   if (newPath) loadFiles(newPath)
 }, { immediate: true })
+
+const handleDropOnTable = async (event) => {
+  const items = event.dataTransfer.items;
+  if (!items) return;
+
+  const fileEntries = [];
+
+  const traverseEntry = async (entry, path = '') => {
+    if (entry.isFile) {
+      const file = await new Promise(resolve => entry.file(resolve));
+      file.relativePath = path + file.name;
+      fileEntries.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise(resolve => reader.readEntries(resolve));
+      for (const child of entries) {
+        await traverseEntry(child, path + entry.name + '/');
+      }
+    }
+  };
+
+  for (let i = 0; i < items.length; i++) {
+    const entry = items[i].webkitGetAsEntry?.();
+    if (entry) {
+      await traverseEntry(entry);
+    }
+  }
+
+  for (const file of fileEntries) {
+    const formData = new FormData();
+    formData.append('files[]', file);
+    formData.append('paths[]', `${fileStore.currentPath}/${file.relativePath}`.replace(/^\/+/, ''));
+
+    try {
+      await axios.post('/files/upload', formData);
+    } catch (err) {
+      console.error('Fehler beim Upload:', err);
+    }
+  }
+
+  // Optional: reload files after drop
+  loadFiles(fileStore.currentPath);
+};
 </script>
 
 <style>

@@ -2,8 +2,15 @@
   <div>
     <!-- Ordner -->
     <div v-if="node && node.type === 'folder'">
-      <a class="nav-link" href="#" @click.prevent="toggle" :data-bs-toggle="'collapse'"
-        :data-bs-target="`#collapse_${safeId}`" :aria-expanded="isOpen.toString()">
+      <a class="nav-link"
+         href="#"
+         @click.prevent="toggle"
+         :data-bs-toggle="'collapse'"
+         :data-bs-target="`#collapse_${safeId}`"
+         :aria-expanded="isOpen.toString()"
+         @dragover.prevent
+         @drop.prevent="handleDropOnFolder"
+      >
         {{ node.name }}
         <span v-if="loading" class="spinner-border spinner-border-sm ms-auto" role="status"></span>
         <span v-else class="nav-link-toggle"></span>
@@ -11,7 +18,7 @@
 
       <transition name="tree-slide">
         <nav v-show="isOpen" class="nav nav-vertical" :id="`collapse_${safeId}`">
-          <Tree v-for="child in node.children" :key="child.path" :node="child" />
+          <Tree v-for="child in (node.children || []).filter(c => c.type === 'folder')" :key="child.path" :node="child" />
         </nav>
       </transition>
     </div>
@@ -57,6 +64,50 @@ const toggle = async () => {
   } else if (isOpen.value && props.node.type === 'folder') {
     fileStore.setCurrentPath(props.node.path); // bereits geladene Ordner
   }
+};
+
+const handleDropOnFolder = async (event) => {
+  const items = event.dataTransfer.items;
+  if (!items) return;
+
+  const fileEntries = [];
+
+  const traverseEntry = async (entry, path = '') => {
+    if (entry.isFile) {
+      const file = await new Promise(resolve => entry.file(resolve));
+      file.relativePath = path + file.name;
+      fileEntries.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise(resolve => reader.readEntries(resolve));
+      for (const child of entries) {
+        await traverseEntry(child, path + entry.name + '/');
+      }
+    }
+  };
+
+  for (let i = 0; i < items.length; i++) {
+    const entry = items[i].webkitGetAsEntry?.();
+    if (entry) {
+      await traverseEntry(entry);
+    }
+  }
+
+  for (const file of fileEntries) {
+    const formData = new FormData();
+    formData.append('files[]', file);
+    formData.append('paths[]', `${props.node.path}/${file.relativePath}`.replace(/^\/+/, ''));
+
+    try {
+      await axios.post('/files/upload', formData);
+    } catch (err) {
+      console.error('Fehler beim Upload:', err);
+    }
+  }
+
+  // Optional: Reload folder view
+  await toggle(); // collapse
+  await toggle(); // re-expand and reload
 };
 </script>
 

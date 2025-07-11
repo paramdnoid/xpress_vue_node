@@ -6,49 +6,45 @@
           My Uploads <div class="ms-auto fw-lighter">{{ totalSize }}</div>
         </div>
         <nav class="nav nav-vertical px-2">
-          <Tree v-for="child in rootNode?.children || []" :key="child.path" :node="child" />
+          <Tree v-for="child in (rootNode?.children || []).filter(c => c.type === 'folder')" :key="child.path"
+            :node="child" />
         </nav>
       </div>
     </template>
     <template #content>
-      <div class="d-flex justify-content-between justify-items-center m-1 px-2">
-        <div class="breadcrumb-wrapper overflow-auto">
-          <ol class="breadcrumb breadcrumb-muted" aria-label="breadcrumbs">
-            <li class="breadcrumb-item">
-              <a href="#" @click.prevent="goTo(-1)">File Manager</a>
-            </li>
-            <li v-for="(segment, index) in segments" :key="'file-' + index" class="breadcrumb-item"
-              :class="{ active: index === segments.length - 1 }"
-              :aria-current="index === segments.length - 1 ? 'page' : null">
-              <a v-if="index !== segments.length - 1" href="#" @click.prevent="goTo(index)">
-                {{ segment }}
-              </a>
-              <span v-else>{{ segment }}</span>
-            </li>
-          </ol>
-        </div>
-        <div class="view-mode">
-          <iconify-icon @click="viewMode = 'table'"
-            :class="[viewMode === 'table' ? 'text-primary' : 'text-primary opacity-50']"
-            icon="material-symbols:event-list-outline-sharp" width="20" height="20"></iconify-icon>
+      <div class="d-flex flex-column flex-fill position-relative">
+        <div @dragover.prevent @drop.prevent="handleDrop" class="drop-zone z-1"></div>
+        <div class="d-flex justify-content-between justify-items-center m-1 px-2 z-1">
+          <div class="breadcrumb-wrapper overflow-auto">
+            <ol class="breadcrumb breadcrumb-muted" aria-label="breadcrumbs">
+              <li class="breadcrumb-item">
+                <a href="#" @click.prevent="goTo(-1)">File Manager</a>
+              </li>
+              <li v-for="(segment, index) in segments" :key="'file-' + index" class="breadcrumb-item"
+                :class="{ active: index === segments.length - 1 }"
+                :aria-current="index === segments.length - 1 ? 'page' : null">
+                <a v-if="index !== segments.length - 1" href="#" @click.prevent="goTo(index)">
+                  {{ segment }}
+                </a>
+                <span v-else>{{ segment }}</span>
+              </li>
+            </ol>
+          </div>
+          <div class="view-mode">
+            <iconify-icon @click="viewMode = 'table'"
+              :class="[viewMode === 'table' ? 'text-primary' : 'text-primary opacity-50']"
+              icon="material-symbols:event-list-outline-sharp" width="20" height="20"></iconify-icon>
             <div class="px-1"></div>
-          <iconify-icon @click="viewMode = 'grid'"
-            :class="[viewMode === 'grid' ? 'text-primary' : 'text-primary opacity-50']" icon="material-symbols:grid-on"
-            width="20" height="20"></iconify-icon>
+            <iconify-icon @click="viewMode = 'grid'"
+              :class="[viewMode === 'grid' ? 'text-primary' : 'text-primary opacity-50']"
+              icon="material-symbols:grid-on" width="20" height="20"></iconify-icon>
+          </div>
         </div>
+        <div v-if="isLoading" class="text-center text-muted py-4">Lade Inhalte...</div>
+        <div v-else-if="error" class="text-danger text-center py-4">{{ error }}</div>
+        <Grid v-if="!isLoading && !error && viewMode === 'grid'" :files="files" @delete="confirmDelete" />
+        <Table v-else-if="!isLoading && !error" :files="files" @delete="confirmDelete" />
       </div>
-      <div v-if="isLoading" class="text-center text-muted py-4">Lade Inhalte...</div>
-      <div v-else-if="error" class="text-danger text-center py-4">{{ error }}</div>
-
-      <div @dragover.prevent
-           @drop.prevent="handleDrop"
-           class="drop-zone border-dashed border border-secondary mb-2 p-4 text-center rounded">
-        <span class="text-muted">Dateien oder Ordner hierher ziehen, um sie hochzuladen</span>
-      </div>
-
-
-      <Grid v-if="!isLoading && !error && viewMode === 'grid'" :files="files" @delete="confirmDelete" />
-      <Table v-else-if="!isLoading && !error" :files="files" @delete="confirmDelete" />
     </template>
   </SidebarLayout>
 </template>
@@ -61,7 +57,6 @@ import SidebarLayout from '@/layouts/SidebarLayout.vue'
 import Tree from './Tree.vue';
 import Grid from './Grid.vue'
 import Table from './Table.vue'
-import Swal from 'sweetalert2';
 
 const isLoading = ref(true);
 const error = ref(null);
@@ -70,6 +65,7 @@ const files = ref([]);
 const rootNode = ref(null);
 const fileStore = useFileStore();
 const totalSize = ref('')
+const uploadedTotal = ref(0);
 const viewMode = inject('viewMode', ref('table'))
 const segments = computed(() =>
   fileStore.currentPath.split('/').filter(Boolean)
@@ -86,35 +82,28 @@ const goToRoot = () => {
 
 const confirmDelete = async (file) => {
   const isFolder = file.type === 'folder';
-  const result = await Swal.fire({
-    title: isFolder ? 'Ordner löschen?' : 'Datei löschen?',
-    text: isFolder
+  const shouldDelete = confirm(
+    isFolder
       ? `Möchtest du den Ordner "${file.name}" inklusive aller Inhalte wirklich löschen?`
-      : `Möchtest du "${file.name}" wirklich löschen?`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'Löschen',
-    cancelButtonText: 'Abbrechen',
-  });
+      : `Möchtest du "${file.name}" wirklich löschen?`
+  );
 
-  if (result.isConfirmed) {
-    try {
-      await axios.delete(`/files/delete/${encodeURIComponent(file.path)}`);
-      files.value = files.value.filter(f => f.name !== file.name);
-      if (rootNode.value?.children) {
-        rootNode.value.children = rootNode.value.children.filter(f => f.name !== file.name);
-      }
-      if (fileStore.files) {
-        fileStore.files = fileStore.files.filter(f => f.name !== file.name);
-      }
-      Swal.fire('Gelöscht!', `${isFolder ? 'Ordner' : 'Datei'} "${file.name}" wurde gelöscht.`, 'success');
-    } catch (err) {
-      console.error(err);
-      Swal.fire('Fehler', `${isFolder ? 'Ordner' : 'Datei'} konnte nicht gelöscht werden.`, 'error');
+  if (!shouldDelete) return;
+
+  try {
+    await axios.delete(`/files/delete/${encodeURIComponent(file.path)}`);
+    files.value = files.value.filter(f => f.name !== file.name);
+    if (rootNode.value?.children) {
+      rootNode.value.children = rootNode.value.children.filter(f => f.name !== file.name);
     }
+    if (fileStore.files) {
+      fileStore.files = fileStore.files.filter(f => f.name !== file.name);
+    }
+  } catch (err) {
+    console.error(err);
+    alert(`${isFolder ? 'Ordner' : 'Datei'} konnte nicht gelöscht werden.`);
   }
 };
-
 
 const handleDrop = async (event) => {
   const items = event.dataTransfer.items;
@@ -163,6 +152,8 @@ const handleDrop = async (event) => {
         signal: controller.signal,
         onUploadProgress: (e) => {
           uploadItem.progress = Math.round((e.loaded * 100) / e.total);
+          uploadedTotal.value += e.loaded;
+          totalSize.value = formatBytes(uploadedTotal.value);
         }
       });
       uploadItem.status = 'done';
@@ -250,6 +241,14 @@ onUpdated(() => {
   const el = document.querySelector('.breadcrumb-wrapper');
   if (el) el.scrollLeft = el.scrollWidth;
 });
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 </script>
 
 <style>
@@ -279,11 +278,11 @@ onUpdated(() => {
 }
 
 .breadcrumb-item a {
-    text-decoration: none !important;
-    cursor: pointer;
-} 
+  text-decoration: none !important;
+  cursor: pointer;
+}
 
-.breadcrumb-item + .breadcrumb-item::before {
+.breadcrumb-item+.breadcrumb-item::before {
   content: '>';
   margin: 0 0.25rem;
   color: #aaa;
@@ -297,6 +296,7 @@ onUpdated(() => {
     margin: 0;
     white-space: nowrap;
   }
+
   .breadcrumb-item {
     max-width: 100%;
     white-space: nowrap;
@@ -306,27 +306,31 @@ onUpdated(() => {
     padding: 0 4px;
 
   }
+
   .breadcrumb-wrapper {
     max-width: 100%;
     overflow-x: auto;
     white-space: nowrap;
     display: block;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
+    /* Firefox */
   }
+
   .breadcrumb {
     display: inline-flex;
   }
+
   .breadcrumb-wrapper::-webkit-scrollbar {
-    display: none; /* Chrome, Safari */
+    display: none;
+    /* Chrome, Safari */
   }
 }
 
 .drop-zone {
-  border-width: 2px;
-  transition: background 0.2s ease-in-out;
-}
-.drop-zone:hover {
-  background: rgba(0, 123, 255, 0.05);
-  cursor: copy;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
 }
 </style>
