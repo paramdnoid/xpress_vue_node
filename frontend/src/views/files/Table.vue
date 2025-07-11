@@ -28,7 +28,7 @@
               <button @click.stop class="btn btn-icon border-0 text-primary bg-transparent" title="Open">
                 <iconify-icon icon="mdi:eye-outline" />
               </button>
-              <button @click.stop class="btn btn-icon border-0 text-danger bg-transparent" title="Delete">
+              <button @click.stop="deleteFile(file)" class="btn btn-icon border-0 text-danger bg-transparent" title="Delete">
                 <iconify-icon icon="mdi:trash-can-outline" />
               </button>
             </div>
@@ -93,6 +93,17 @@ const goBack = () => {
     fileStore.setCurrentPath(newPath || '/')
   }
 }
+
+const deleteFile = async (file) => {
+  if (!confirm(`Delete "${file.name}"?`)) return;
+  try {
+    await axios.delete(`/files/delete/${encodeURIComponent(file.name)}`);
+    files.value = files.value.filter(f => f.name !== file.name);
+  } catch (err) {
+    alert('Deletion failed');
+    console.error(err);
+  }
+};
 
 watch(() => fileStore.currentPath, (newPath) => {
   if (newPath) loadFiles(newPath)
