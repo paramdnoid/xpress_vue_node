@@ -43,68 +43,27 @@
         <Grid v-if="!fileStore.error && viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
         <Table v-else-if="!fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
       </div>
-      <UploadToast />
-      <div v-if="uploadQueue.length" class="upload-queue border-top pt-2 px-3">
-        <div class="fw-bold mb-2">Upload-Warteschlange</div>
-        <div v-for="item in uploadQueue" :key="item.id" class="d-flex align-items-center justify-content-between mb-2 small">
-          <div class="w-100">
-            <div class="d-flex justify-content-between">
-              <span>{{ item.name }}</span>
-              <span v-if="item.status === 'uploading'">{{ item.progress }}%</span>
-              <span v-else-if="item.status === 'paused'">⏸ Pausiert</span>
-              <span v-else-if="item.status === 'done'">✅ Fertig</span>
-              <span v-else-if="item.status === 'canceled'">❌ Abgebrochen</span>
-              <span v-else-if="item.status === 'error'">⚠️ Fehler</span>
-            </div>
-            <div class="progress progress-xs mt-1">
-              <div
-                class="progress-bar"
-                :class="{
-                  'bg-success': item.status === 'done',
-                  'bg-danger': item.status === 'error',
-                  'bg-warning': item.status === 'paused',
-                  'bg-info': item.status === 'uploading'
-                }"
-                role="progressbar"
-                :style="{ width: item.progress + '%' }"
-              ></div>
-            </div>
-          </div>
-          <div class="ms-2">
-            <button v-if="item.status === 'uploading'" @click="pauseUpload(item)" class="btn btn-sm btn-link text-warning">⏸</button>
-            <button v-else-if="item.status === 'paused'" @click="resumeUpload(item)" class="btn btn-sm btn-link text-info">▶️</button>
-            <button v-if="item.status !== 'done'" @click="cancelUpload(item)" class="btn btn-sm btn-link text-danger">✖️</button>
-          </div>
-        </div>
-      </div>
+      <UploadToast :key="fileStore.uploadQueue.length" />
     </template>
   </SidebarLayout>
 </template>
 
 <script setup>
-import { onMounted, onUpdated, ref, inject, computed, watch } from 'vue';
+import { onMounted, inject, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useFileStore } from '@/stores/files';
 import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
-import UploadToast from '@/components/UploadToast.vue';
 import Tree from './Tree.vue';
 import Grid from './Grid.vue'
 import Table from './Table.vue'
 
-const rootNode = ref(null);
 const fileStore = useFileStore();
-const { uploadQueue } = storeToRefs(fileStore);
-const totalSize = ref('')
-const uploadedTotal = ref(0);
-const viewMode = inject('viewMode', ref('table'))
+const { totalSize } = storeToRefs(fileStore);
+const viewMode = inject('viewMode', 'table')
 const segments = computed(() =>
   fileStore.currentPath.split('/').filter(Boolean)
 )
-
-const loadCurrentFolder = async () => {
-  await fileStore.loadFiles();
-}
 
 const goTo = (index) => {
   const newPath = segments.value.slice(0, index + 1).join('/')
@@ -145,25 +104,8 @@ const handleDrop = async (event) => {
   }
 };
 
-const pauseUpload = (item) => {
-  fileStore.pauseUpload(item.id);
-};
-
-const resumeUpload = (item) => {
-  fileStore.resumeUpload(item.id);
-};
-
-const cancelUpload = (item) => {
-  fileStore.cancelUpload(item.id);
-};
-
 onMounted(async () => {
   try {
-    rootNode.value = {
-      name: 'root',
-      path: '/',
-      type: 'folder',
-    };
     fileStore.setCurrentPath('/');
 
     const size = await fileStore.getTotalSize();
@@ -174,6 +116,8 @@ onMounted(async () => {
   }
 });
 
+// Breadcrumb scroll update
+import { onUpdated } from 'vue'
 onUpdated(() => {
   const el = document.querySelector('.breadcrumb-wrapper');
   if (el) el.scrollLeft = el.scrollWidth;
@@ -183,13 +127,7 @@ watch(() => fileStore.currentPath, async (newPath) => {
   if (newPath !== null) await fileStore.loadFiles();
 }, { immediate: true });
 
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
+
 </script>
 
 <style>
@@ -210,23 +148,6 @@ function formatBytes(bytes) {
 .view-mode iconify-icon:hover {
   cursor: pointer;
   opacity: .8;
-}
-
-.breadcrumb-wrapper {
-  max-width: 100%;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-}
-
-.breadcrumb-item a {
-  text-decoration: none !important;
-  cursor: pointer;
-}
-
-.breadcrumb-item+.breadcrumb-item::before {
-  content: '>';
-  margin: 0 0.25rem;
-  color: #aaa;
 }
 
 @media (max-width: 576px) {
@@ -273,10 +194,5 @@ function formatBytes(bytes) {
   right: 0;
   top: 0;
   bottom: 0;
-}
-
-.upload-queue {
-  background-color: rgba(255, 255, 255, 0.02);
-  border-top: 1px solid var(--tblr-border-color, #ddd);
 }
 </style>

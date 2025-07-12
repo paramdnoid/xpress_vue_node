@@ -226,7 +226,6 @@ const handleUpload = (req, res) => {
   });
 
   busboy.on('file', (fieldname, file, filename) => {
-    console.log('🔍 Incoming file fieldname:', fieldname);
     const cleanPath = pathMap[fieldname] || filename;
 
     if (typeof cleanPath !== 'string') {
@@ -253,15 +252,12 @@ const handleUpload = (req, res) => {
 
     const uploadPromise = new Promise((resolve, reject) => {
       writeStream.on('close', () => {
-        console.log(`✅ Upload abgeschlossen: ${finalPath}`);
-        // Enqueue thumbnail generation job
         const mimeType = mime.lookup(finalPath) || '';
         if (mimeType.startsWith('image/')) {
           thumbnailQueue.add({ filePath: finalPath, type: 'image' });
         } else if (mimeType.startsWith('video/')) {
           thumbnailQueue.add({ filePath: finalPath, type: 'video' });
         }
-        // Promise in jedem Fall auflösen, sonst hängt der Upload ewig
         resolve();
       });
       writeStream.on('error', reject);

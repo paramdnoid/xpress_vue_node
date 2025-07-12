@@ -29,7 +29,6 @@
 import { ref, computed } from 'vue';
 import { useFileStore } from '@/stores/files';
 
-const emit = defineEmits(['row-click']);
 const fileStore = useFileStore();
 const props = defineProps({ node: Object });
 const isOpen = ref(false);

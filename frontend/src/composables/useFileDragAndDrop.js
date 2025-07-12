@@ -1,5 +1,3 @@
-import { ref } from 'vue'
-
 export async function getFilesFromDataTransferItems(items) {
   const files = []
   async function traverseEntry(entry, path = '') {
@@ -22,11 +20,4 @@ export async function getFilesFromDataTransferItems(items) {
     }
   }
   return files
-}
-
-export function useDragDrop() {
-  const isDropActive = ref(false)
-  const onDragOver = e => { e.preventDefault(); isDropActive.value = true }
-  const onDragLeave = e => { e.preventDefault(); isDropActive.value = false }
-  return { isDropActive, onDragOver, onDragLeave }
 }

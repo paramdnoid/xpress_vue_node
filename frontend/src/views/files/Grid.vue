@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useFileStore } from '@/stores/files'
 import { getFileIcon } from '@/utils/fileIcon'
 import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop'
@@ -50,16 +50,14 @@ const props = defineProps(['files'])
 const files = computed(() => props.files)
 const fileStore = useFileStore()
 
-const emit = defineEmits(['row-click'])
+// No emits needed, Grid view does not emit row-click for files
 
-const isDropActive = ref(false)
 
 const handleClick = (file) => {
   if (file.type === 'folder') {
     fileStore.setCurrentPath(file.path)
-  } else {
-    emit('row-click', file)
   }
+  // For files, no action is taken in Grid view (no emit)
 }
 
 const goBack = () => {
@@ -72,12 +70,14 @@ const goBack = () => {
 }
 
 const handleDrop = async (event) => {
-  isDropActive.value = false
   const filesToUpload = await getFilesFromDataTransferItems(event.dataTransfer.items)
   for (const file of filesToUpload) {
-    const formData = new FormData()
-    formData.append('file', file, file.fullPath || file.name)
-    await fileStore.uploadFile(formData)
+    const formData = new FormData();
+    const fileId = crypto.randomUUID();
+    const relPath = typeof file.relativePath === 'string' ? file.relativePath : file.name;
+    formData.append(`relativePath:${fileId}`, `${fileStore.currentPath}/${relPath}`.replace(/^\/+/, ''));
+    formData.append(fileId, file, file.name);
+    await fileStore.uploadFile(formData, file.name || file.relativePath);
   }
 }
 </script>

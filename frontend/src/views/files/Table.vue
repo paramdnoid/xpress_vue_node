@@ -47,14 +47,13 @@ import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop'
 
 const fileStore = useFileStore()
 
-const emit = defineEmits(['row-click', 'delete'])
+const emit = defineEmits(['delete'])
 
 const handleClick = (file) => {
   if (file.type === 'folder') {
     fileStore.setCurrentPath(file.path)
-  } else {
-    emit('row-click', file)
   }
+  // For files, do nothing (no emit)
 }
 
 const goBack = () => {

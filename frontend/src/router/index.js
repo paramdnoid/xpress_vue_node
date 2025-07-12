@@ -3,7 +3,7 @@ import Verify from '@/views/auth/Verify.vue';
 import Landing from '@/views/Landing.vue';
 import Login from '@/views/auth/Login.vue';
 import Register from '@/views/auth/Register.vue'
-import FileManager from '@/views/files/Manager.vue';
+import Manager from '@/views/files/Manager.vue';
 import Flows from '@/views/Flows.vue';
 import Mails from '@/views/Mails.vue';
 import Meetings from '@/views/Meetings.vue';
@@ -12,7 +12,7 @@ import Profile from '@/views/Profile.vue';
 const routes = [
   { path: '/', component: Landing, meta: { title: 'Landing', requiresAuth: false } },
   { path: '/verify-email', component: Verify, meta: { title: 'Verify' } },
-  { path: '/file-manager', component: FileManager, meta: { title: 'File Manager', requiresAuth: true } },
+  { path: '/file-manager', component: Manager, meta: { title: 'File Manager', requiresAuth: true } },
   { path: '/flows', component: Flows, meta: { title: 'Flows', requiresAuth: true } },
   { path: '/mails', component: Mails, meta: { title: 'Mails', requiresAuth: true } },
   { path: '/meetings', component: Meetings, meta: { title: 'Meetings', requiresAuth: true } },

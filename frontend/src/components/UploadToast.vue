@@ -1,10 +1,13 @@
 <script setup>
 import { useFileStore } from '@/stores/files'
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 const fileStore = useFileStore()
 
+const { uploadQueue } = storeToRefs(fileStore)
+
 const overallProgress = computed(() => {
-  const queue = fileStore.uploadQueue;
+  const queue = uploadQueue.value;
   if (!queue.length) return 0;
   const activeItems = queue.filter(item => item.status !== 'done' && item.status !== 'canceled');
   // Durchschnitt aller progress-Werte
@@ -12,7 +15,9 @@ const overallProgress = computed(() => {
   return Math.round(sum / (activeItems.length || queue.length));
 });
 
-const isActive = computed(() => fileStore.uploadQueue.some(item => item.status === 'uploading' || item.status === 'pending'));
+const isActive = computed(() =>
+  uploadQueue.value.some(item => item.status !== 'done' && item.status !== 'canceled')
+);
 </script>
 
 <template>

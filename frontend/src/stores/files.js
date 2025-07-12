@@ -11,7 +11,8 @@ export const useFileStore = defineStore('file', () => {
   const success = ref(null);
 
   const uploadQueue = ref([]);
-  let isUploading = false;
+let isUploading = false;
+const totalSize = ref(null);
 
   const loadFiles = async (path = currentPath.value) => {
     error.value = null;
@@ -40,14 +41,6 @@ export const useFileStore = defineStore('file', () => {
       uploadItem.progress = 0;
       uploadItem.error = null;
       try {
-        // Removed setting relativePath in formData before upload
-        for (const [key, value] of uploadItem.formData.entries()) {
-          if (value instanceof File) {
-            console.log('🧾 Uploading file field:', key, 'name:', value.name, 'size:', value.size);
-          } else {
-            console.log('🧾 Uploading field:', key, 'value:', value);
-          }
-        }
         await axios.post('/files/upload', uploadItem.formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
           maxContentLength: Infinity,
@@ -55,6 +48,9 @@ export const useFileStore = defineStore('file', () => {
           onUploadProgress: (progressEvent) => {
             if (progressEvent.lengthComputable) {
               uploadItem.progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              uploadQueue.value = uploadQueue.value.map(item =>
+                item.id === uploadItem.id ? { ...item, progress: uploadItem.progress } : item
+              );
             }
           },
           signal: uploadItem.controller.signal,
@@ -63,6 +59,11 @@ export const useFileStore = defineStore('file', () => {
         uploadItem.progress = 100;
         success.value = `Datei ${uploadItem.name} erfolgreich hochgeladen`;
         await loadFiles();
+        const size = await getTotalSize();
+        if (size !== null) totalSize.value = size;
+        // Remove completed upload from queue
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        uploadQueue.value = uploadQueue.value.filter(item => item.id !== uploadItem.id);
       } catch (err) {
         if (err.name === 'CanceledError' || err.name === 'AbortError') {
           uploadItem.status = 'canceled';
@@ -185,5 +186,6 @@ export const useFileStore = defineStore('file', () => {
     pauseUpload,
     resumeUpload,
     cancelUpload,
+    totalSize,
   };
 });

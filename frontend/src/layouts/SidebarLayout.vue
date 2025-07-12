@@ -37,20 +37,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, provide } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import DefaultLayout from './DefaultLayout.vue'
 import SidebarToggle from '@/components/SidebarToggle.vue'
 
 const viewMode = ref('table')
 provide('viewMode', viewMode)
 const isSidebarOpen = ref(true)
-const isWide = ref(window.innerWidth >= 768)
 const searchQuery = ref('')
 
 const updateSidebarState = () => {
-  const wide = window.innerWidth >= 768
-  isWide.value = wide
-  isSidebarOpen.value = wide
+  isSidebarOpen.value = window.innerWidth >= 768
 }
 
 const toggleSidebarState = () => {
@@ -63,10 +60,6 @@ provide('isSidebarOpen', isSidebarOpen)
 onMounted(() => {
   updateSidebarState()
   window.addEventListener('resize', updateSidebarState)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateSidebarState)
 })
 </script>
 
