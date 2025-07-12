@@ -34,49 +34,24 @@ export async function uploadFilesInChunks(files, currentPath = '') {
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = file.slice(start, end);
 
-        //console.log(`Processing chunk ${chunkIndex + 1}/${totalChunks} (${chunk.size} bytes)`);
-
-        const formData = new FormData();
-        
         // Build the relative path more carefully
         const relPath = file.webkitRelativePath || file.relativePath || file.name;
         const fullPath = normalizedPath 
           ? `${normalizedPath}/${relPath}`.replace(/\/+/g, '/')
           : relPath;
-        
         // Remove leading slash if present
         const cleanPath = fullPath.replace(/^\/+/, '');
-        
-        //console.log(`Upload path: ${cleanPath}`);
 
-        // Append form data with consistent naming
-        formData.append('fileId', fileId);
-        formData.append('relativePath', cleanPath);
-        formData.append('file', chunk, file.name);
-        formData.append('chunkIndex', chunkIndex.toString());
-        formData.append('totalChunks', totalChunks.toString());
-        formData.append('originalName', file.name);
-        formData.append('chunkSize', chunk.size.toString());
-
-        try {
-
-          //console.log('Uploading chunk:', { cleanPath, chunkIndex, totalChunks });
-          await fileStore.uploadFile({
-            chunkFile: chunk,
-            fullFileName: cleanPath,
-            chunkIndex,
-            totalChunks,
-            userId: null // Optional: Hier UserId einfügen, falls nötig
-          });
-
-
-
-          
-          //console.log(`Successfully uploaded chunk ${chunkIndex + 1}/${totalChunks} for ${file.name}`);
-        } catch (chunkError) {
-          console.error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks} for ${file.name}:`, chunkError);
-          throw new Error(`Upload failed for ${file.name} at chunk ${chunkIndex + 1}: ${chunkError.message}`);
-        }
+        // Enqueue the chunk immediately (don't await)
+        fileStore.uploadFile({
+          chunkFile: chunk,
+          fullFileName: cleanPath,
+          chunkIndex,
+          totalChunks,
+          userId: null // Optional: Hier UserId einfügen, falls nötig
+        });
+        // Optionally log for debugging
+        //console.log(`Enqueued chunk ${chunkIndex + 1}/${totalChunks} for ${file.name}`);
       }
       
       //console.log(`Successfully completed upload for file: ${file.name}`);
