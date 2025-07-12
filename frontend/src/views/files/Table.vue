@@ -43,6 +43,7 @@
 <script setup>
 import { useFileStore } from '@/stores/files'
 import { getFileIcon } from '@/utils/fileIcon'
+import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop'
 
 const fileStore = useFileStore()
 
@@ -74,45 +75,19 @@ const deleteFile = (file) => {
 };
 
 const handleDropOnTable = async (event) => {
-  const items = event.dataTransfer.items;
-  if (!items) return;
-
-  const fileEntries = [];
-
-  const traverseEntry = async (entry, path = '') => {
-    if (entry.isFile) {
-      const file = await new Promise(resolve => entry.file(resolve));
-      file.relativePath = path + file.name;
-      fileEntries.push(file);
-    } else if (entry.isDirectory) {
-      const reader = entry.createReader();
-      const entries = await new Promise(resolve => reader.readEntries(resolve));
-      for (const child of entries) {
-        await traverseEntry(child, path + entry.name + '/');
-      }
-    }
-  };
-
-  for (let i = 0; i < items.length; i++) {
-    const entry = items[i].webkitGetAsEntry?.();
-    if (entry) {
-      await traverseEntry(entry);
-    }
-  }
-
+  const fileEntries = await getFilesFromDataTransferItems(event.dataTransfer.items)
   for (const file of fileEntries) {
     const formData = new FormData();
-    formData.append('files[]', file);
-    formData.append('paths[]', `${fileStore.currentPath}/${file.relativePath}`.replace(/^\/+/, ''));
-
+    const pathPart = typeof file.relativePath === 'string' ? file.relativePath : file.name;
+    const fileId = crypto.randomUUID();
+    formData.append(`relativePath:${fileId}`, `${fileStore.currentPath}/${pathPart}`.replace(/^\/+/, ''));
+    formData.append(fileId, file, file.name);
     try {
       await fileStore.uploadFile(formData, file.name || file.relativePath);
     } catch (err) {
       console.error('Fehler beim Upload:', err);
     }
   }
-
-  // Reload files after drop
   await fileStore.loadFiles();
 };
 </script>

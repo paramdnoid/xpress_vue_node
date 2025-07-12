@@ -44,6 +44,7 @@
 import { ref, computed } from 'vue'
 import { useFileStore } from '@/stores/files'
 import { getFileIcon } from '@/utils/fileIcon'
+import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop'
 
 const props = defineProps(['files'])
 const files = computed(() => props.files)
@@ -70,55 +71,9 @@ const goBack = () => {
   }
 }
 
-async function getFilesFromDataTransferItemList(items) {
-  const files = []
-
-  function traverseFileTree(item, path = '') {
-    return new Promise((resolve) => {
-      if (item.isFile) {
-        item.file((file) => {
-          file.fullPath = path + file.name
-          files.push(file)
-          resolve()
-        })
-      } else if (item.isDirectory) {
-        const dirReader = item.createReader()
-        dirReader.readEntries(async (entries) => {
-          for (const entry of entries) {
-            await traverseFileTree(entry, path + item.name + '/')
-          }
-          resolve()
-        })
-      } else {
-        resolve()
-      }
-    })
-  }
-
-  const traversePromises = []
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i].webkitGetAsEntry()
-    if (item) {
-      traversePromises.push(traverseFileTree(item))
-    }
-  }
-  await Promise.all(traversePromises)
-  return files
-}
-
 const handleDrop = async (event) => {
   isDropActive.value = false
-  const dt = event.dataTransfer
-  if (!dt) return
-
-  let filesToUpload = []
-
-  if (dt.items && dt.items.length > 0) {
-    filesToUpload = await getFilesFromDataTransferItemList(dt.items)
-  } else if (dt.files && dt.files.length > 0) {
-    filesToUpload = Array.from(dt.files)
-  }
-
+  const filesToUpload = await getFilesFromDataTransferItems(event.dataTransfer.items)
   for (const file of filesToUpload) {
     const formData = new FormData()
     formData.append('file', file, file.fullPath || file.name)

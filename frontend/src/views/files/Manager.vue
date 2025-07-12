@@ -44,13 +44,48 @@
         <Table v-else-if="!fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
       </div>
       <UploadToast />
+      <div v-if="uploadQueue.length" class="upload-queue border-top pt-2 px-3">
+        <div class="fw-bold mb-2">Upload-Warteschlange</div>
+        <div v-for="item in uploadQueue" :key="item.id" class="d-flex align-items-center justify-content-between mb-2 small">
+          <div class="w-100">
+            <div class="d-flex justify-content-between">
+              <span>{{ item.name }}</span>
+              <span v-if="item.status === 'uploading'">{{ item.progress }}%</span>
+              <span v-else-if="item.status === 'paused'">⏸ Pausiert</span>
+              <span v-else-if="item.status === 'done'">✅ Fertig</span>
+              <span v-else-if="item.status === 'canceled'">❌ Abgebrochen</span>
+              <span v-else-if="item.status === 'error'">⚠️ Fehler</span>
+            </div>
+            <div class="progress progress-xs mt-1">
+              <div
+                class="progress-bar"
+                :class="{
+                  'bg-success': item.status === 'done',
+                  'bg-danger': item.status === 'error',
+                  'bg-warning': item.status === 'paused',
+                  'bg-info': item.status === 'uploading'
+                }"
+                role="progressbar"
+                :style="{ width: item.progress + '%' }"
+              ></div>
+            </div>
+          </div>
+          <div class="ms-2">
+            <button v-if="item.status === 'uploading'" @click="pauseUpload(item)" class="btn btn-sm btn-link text-warning">⏸</button>
+            <button v-else-if="item.status === 'paused'" @click="resumeUpload(item)" class="btn btn-sm btn-link text-info">▶️</button>
+            <button v-if="item.status !== 'done'" @click="cancelUpload(item)" class="btn btn-sm btn-link text-danger">✖️</button>
+          </div>
+        </div>
+      </div>
     </template>
   </SidebarLayout>
 </template>
 
 <script setup>
 import { onMounted, onUpdated, ref, inject, computed, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useFileStore } from '@/stores/files';
+import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
 import UploadToast from '@/components/UploadToast.vue';
 import Tree from './Tree.vue';
@@ -59,6 +94,7 @@ import Table from './Table.vue'
 
 const rootNode = ref(null);
 const fileStore = useFileStore();
+const { uploadQueue } = storeToRefs(fileStore);
 const totalSize = ref('')
 const uploadedTotal = ref(0);
 const viewMode = inject('viewMode', ref('table'))
@@ -98,73 +134,27 @@ const confirmDelete = async (file) => {
 };
 
 const handleDrop = async (event) => {
-  const items = event.dataTransfer.items;
-  if (!items) return;
-
-  const fileEntries = [];
-
-  const traverseEntry = async (entry, path = '') => {
-    if (entry.isFile) {
-      const file = await new Promise(resolve => entry.file(resolve));
-      file.relativePath = path + file.name;
-      fileEntries.push(file);
-    } else if (entry.isDirectory) {
-      const reader = entry.createReader();
-      const entries = await new Promise(resolve => reader.readEntries(resolve));
-      for (const child of entries) {
-        await traverseEntry(child, path + entry.name + '/');
-      }
-    }
-  };
-
-  for (let i = 0; i < items.length; i++) {
-    const entry = items[i].webkitGetAsEntry?.();
-    if (entry) {
-      await traverseEntry(entry);
-    }
-  }
-
+  const fileEntries = await getFilesFromDataTransferItems(event.dataTransfer.items)
   for (const file of fileEntries) {
     const formData = new FormData();
-    formData.append('files[]', file);
     const uploadPath = fileStore.currentPath === '/' ? '' : fileStore.currentPath + '/';
-    formData.append('paths[]', uploadPath + file.relativePath);
-    fileStore.uploadFile(formData, file.relativePath);
+    const fileId = crypto.randomUUID();
+    formData.append(`relativePath:${fileId}`, uploadPath + (file.relativePath || file.name));
+    formData.append(fileId, file, file.name);
+    fileStore.uploadFile(formData, file.name || file.relativePath);
   }
-};
-
-const cancelUpload = (item) => {
-  item.controller.abort();
 };
 
 const pauseUpload = (item) => {
-  item.controller.abort();
-  item.status = 'paused';
+  fileStore.pauseUpload(item.id);
 };
 
-const resumeUpload = async (item) => {
-  const originalFile = item._file;
-  const controller = new AbortController();
-  item.controller = controller;
-  item.status = 'uploading';
-  item.progress = 0;
+const resumeUpload = (item) => {
+  fileStore.resumeUpload(item.id);
+};
 
-  const formData = new FormData();
-  formData.append('files[]', originalFile);
-  formData.append('paths[]', item.relativePath);
-
-  try {
-    await fileStore.uploadFile(formData, file.name || file.relativePath);
-    item.status = 'done';
-    await loadCurrentFolder();
-  } catch (err) {
-    if (controller.signal.aborted) {
-      item.status = 'cancelled';
-    } else {
-      item.status = 'error';
-      console.error(err);
-    }
-  }
+const cancelUpload = (item) => {
+  fileStore.cancelUpload(item.id);
 };
 
 onMounted(async () => {
@@ -283,5 +273,10 @@ function formatBytes(bytes) {
   right: 0;
   top: 0;
   bottom: 0;
+}
+
+.upload-queue {
+  background-color: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--tblr-border-color, #ddd);
 }
 </style>

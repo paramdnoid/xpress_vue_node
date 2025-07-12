@@ -40,8 +40,18 @@ export const useFileStore = defineStore('file', () => {
       uploadItem.progress = 0;
       uploadItem.error = null;
       try {
+        // Removed setting relativePath in formData before upload
+        for (const [key, value] of uploadItem.formData.entries()) {
+          if (value instanceof File) {
+            console.log('🧾 Uploading file field:', key, 'name:', value.name, 'size:', value.size);
+          } else {
+            console.log('🧾 Uploading field:', key, 'value:', value);
+          }
+        }
         await axios.post('/files/upload', uploadItem.formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
           onUploadProgress: (progressEvent) => {
             if (progressEvent.lengthComputable) {
               uploadItem.progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -69,7 +79,15 @@ export const useFileStore = defineStore('file', () => {
 
   const enqueueUpload = (formData, name) => {
     if (!name) {
-      const f = formData.get('file');
+      let f = formData.get('file');
+      if (!f) {
+        for (let [key, val] of formData.entries()) {
+          if (val instanceof File) {
+            f = val;
+            break;
+          }
+        }
+      }
       name = f?.name || 'Datei';
     }
     const id = Date.now() + Math.random().toString(16).slice(2);

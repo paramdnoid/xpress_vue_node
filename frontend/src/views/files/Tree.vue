@@ -53,46 +53,22 @@ const toggle = async () => {
   }
 };
 
+import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop'
+
 const handleDropOnFolder = async (event) => {
-  const items = event.dataTransfer.items;
-  if (!items) return;
-
-  const fileEntries = [];
-
-  const traverseEntry = async (entry, path = '') => {
-    if (entry.isFile) {
-      const file = await new Promise(resolve => entry.file(resolve));
-      file.relativePath = path + file.name;
-      fileEntries.push(file);
-    } else if (entry.isDirectory) {
-      const reader = entry.createReader();
-      const entries = await new Promise(resolve => reader.readEntries(resolve));
-      for (const child of entries) {
-        await traverseEntry(child, path + entry.name + '/');
-      }
-    }
-  };
-
-  for (let i = 0; i < items.length; i++) {
-    const entry = items[i].webkitGetAsEntry?.();
-    if (entry) {
-      await traverseEntry(entry);
-    }
-  }
-
+  const fileEntries = await getFilesFromDataTransferItems(event.dataTransfer.items)
   for (const file of fileEntries) {
     const formData = new FormData();
-    formData.append('files[]', file);
-    formData.append('paths[]', `${props.node.path}/${file.relativePath}`.replace(/^\/+/, ''));
-
+    const fileId = crypto.randomUUID();
+    const relPath = typeof file.relativePath === 'string' ? file.relativePath : file.name;
+    formData.append(`relativePath:${fileId}`, `${props.node.path}/${relPath}`.replace(/^\/+/, ''));
+    formData.append(fileId, file, file.name);
     try {
       await fileStore.uploadFile(formData, file.name || file.relativePath);
     } catch (err) {
       console.error('Fehler beim Upload:', err);
     }
   }
-
-  // Optional: Reload folder view
   await fileStore.loadFiles(props.node.path);
 };
 </script>

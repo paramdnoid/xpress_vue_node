@@ -1,27 +1,12 @@
-/**
- * Email regular expression for validation.
- * @type {RegExp}
- */
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * One day in milliseconds.
- * @type {number}
- */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const bcrypt = require('bcrypt');
 const db = require('../models/db');
-const { generateRefreshToken, refreshToken, generateAccessToken } = require('./tokenController');
+const { generateRefreshToken, generateAccessToken } = require('./tokenController');
 const crypto = require('crypto');
 const { sendVerificationEmail } = require('../utils/mail');
 
-/**
- * Handles user login by verifying credentials and issuing JWT tokens.
- * Sets a refresh token as HttpOnly cookie.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @returns {Promise<import('express').Response>}
- */
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -49,6 +34,14 @@ const login = async (req, res) => {
       maxAge: 7 * ONE_DAY_MS // 7 days
     });
 
+    // Set access token as HttpOnly cookie for subsequent authenticated requests
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 30 * 60 * 1000 // 30 minutes matching access token TTL
+    });
+
     console.log(`[LOGIN] User logged in: ${email}`);
     return res.status(200).json({ accessToken, token: accessToken });
   } catch (err) {
@@ -57,12 +50,6 @@ const login = async (req, res) => {
   }
 };
 
-/**
- * Registers a new user, hashes their password, and sends a verification email.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @returns {Promise<import('express').Response>}
- */
 const register = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -96,13 +83,6 @@ const register = async (req, res) => {
   }
 };
 
-
-/**
- * Retrieves the profile information of the authenticated user.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @returns {Promise<import('express').Response>}
- */
 const getProfile = async (req, res) => {
   try {
     // req.user.id comes from verifyToken middleware
@@ -119,12 +99,6 @@ const getProfile = async (req, res) => {
   }
 };
 
-/**
- * Verifies email using a verification token.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @returns {Promise<import('express').Response>}
- */
 const verifyEmail = async (req, res) => {
   const { token } = req.query;
   try {
@@ -141,12 +115,6 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-/**
- * Resends email verification if user is not verified.
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @returns {Promise<import('express').Response>}
- */
 const resendVerification = async (req, res) => {
   const { email } = req.body;
   try {
@@ -171,4 +139,4 @@ const resendVerification = async (req, res) => {
   }
 };
 
-module.exports = { login, register, refreshToken, getProfile, verifyEmail, resendVerification };
+module.exports = { login, register, getProfile, verifyEmail, resendVerification };

@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { refreshAccessToken } from '@/utils/auth';
 import Verify from '@/views/auth/Verify.vue';
 import Landing from '@/views/Landing.vue';
 import Login from '@/views/auth/Login.vue';
@@ -11,8 +10,8 @@ import Meetings from '@/views/Meetings.vue';
 import Profile from '@/views/Profile.vue';
 
 const routes = [
+  { path: '/', component: Landing, meta: { title: 'Landing', requiresAuth: false } },
   { path: '/verify-email', component: Verify, meta: { title: 'Verify' } },
-  { path: '/', component: Landing, meta: { title: 'Landing', guest: true } },
   { path: '/file-manager', component: FileManager, meta: { title: 'File Manager', requiresAuth: true } },
   { path: '/flows', component: Flows, meta: { title: 'Flows', requiresAuth: true } },
   { path: '/mails', component: Mails, meta: { title: 'Mails', requiresAuth: true } },
@@ -35,13 +34,11 @@ router.beforeEach(async (to, from, next) => {
     ? `${to.meta.title} | ${defaultTitle}`
     : defaultTitle;
 
-  // if route requires auth, ensure token is valid (or refresh it)
+  // if route requires auth, ensure an access token is present
   if (to.meta.requiresAuth) {
-    const ok = await refreshAccessToken();    
     const token = localStorage.getItem('accessToken');
-    
-    if (!ok || !token) {
-      console.warn('No valid token – redirecting to Login');
+    if (!token) {
+      console.warn('No access token – redirecting to Login');
       return next({ path: '/login', query: { redirect: to.fullPath } });
     }
   }

@@ -1,34 +1,58 @@
 const fs = require('fs');
+const fsp = fs.promises;
 const path = require('path');
-const { filesize } = require('filesize');
-const mime = require('mime');
+const mime = require('mime-types');
 const sharp = require('sharp');
+const Busboy = require('busboy');
+const { filesize } = require('filesize');
 require('dotenv').config();
+
+const Queue = require('bull');
+const thumbnailQueue = new Queue('thumbnails', {
+  redis: {
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: process.env.REDIS_PORT || 6379
+  }
+});
 
 const baseDir = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../..', 'uploads'));
 
-const getFolderFiles = (req, res) => {
+const getFolderFiles = async (req, res) => {
   const baseDirUser = ensureUserUploadDir(req.user.id);
-  const relativePath = req.query.path || '';
-  const targetPath = path.join(baseDirUser, relativePath);
+  // Normalize path: strip any leading slashes so '/' refers to baseDirUser
+  let relativePath = req.query.path || '';
+  relativePath = relativePath.replace(/^\/+/, '');
+  const targetPath = path.resolve(baseDirUser, relativePath);
+  if (!targetPath.startsWith(baseDirUser + path.sep) && targetPath !== baseDirUser) {
+    return res.status(400).json({ error: 'Invalid path' });
+  }
 
   try {
-    if (!fs.existsSync(targetPath)) return res.json({ children: [] });
+    await fsp.access(targetPath);
+  } catch {
+    return res.json({ children: [] });
+  }
 
-    const items = fs.readdirSync(targetPath, { withFileTypes: true });
-    const children = items.map(item => {
-      const fullPath = path.join(targetPath, item.name);
-      const stats = fs.statSync(fullPath);
-      return {
-        name: item.name,
-        path: path.relative(baseDirUser, path.join(targetPath, item.name)),
-        type: item.isDirectory() ? 'folder' : 'file',
-        size: item.isFile()
-          ? filesize(stats.size)
-          : filesize(getFolderSize(fullPath)),
-        updated: `${String(stats.mtime.getDate()).padStart(2, '0')}.${String(stats.mtime.getMonth() + 1).padStart(2, '0')}.${stats.mtime.getFullYear()}`
-      };
-    });
+  try {
+    const items = await fsp.readdir(targetPath, { withFileTypes: true });
+    const children = await Promise.all(
+      items.map(async item => {
+        const fullPath = path.join(targetPath, item.name);
+        const stats = await fsp.stat(fullPath);
+        const isFile = item.isFile();
+        return {
+          name: item.name,
+          path: path.relative(baseDirUser, fullPath),
+          type: item.isDirectory() ? 'folder' : 'file',
+          size: isFile
+            ? filesize(stats.size)
+            : filesize(getFolderSize(fullPath)),
+          updated: `${String(stats.mtime.getDate()).padStart(2, '0')}.${String(
+            stats.mtime.getMonth() + 1
+          ).padStart(2, '0')}.${stats.mtime.getFullYear()}`
+        };
+      })
+    );
 
     res.json({ children });
   } catch (err) {
@@ -39,8 +63,13 @@ const getFolderFiles = (req, res) => {
 
 const getFolderSizeRoute = (req, res) => {
   const baseDirUser = ensureUserUploadDir(req.user.id);
-  const relativePath = req.query.path || '';
-  const targetPath = path.join(baseDirUser, relativePath);
+  // Normalize path: strip any leading slashes
+  let relativePath = req.query.path || '';
+  relativePath = relativePath.replace(/^\/+/, '');
+  const targetPath = path.resolve(baseDirUser, relativePath);
+  if (!targetPath.startsWith(baseDirUser + path.sep) && targetPath !== baseDirUser) {
+    return res.status(400).json({ error: 'Invalid path' });
+  }
 
   try {
     const totalSize = getFolderSize(targetPath);
@@ -66,7 +95,10 @@ const getTotalUserUploadSize = (req, res) => {
 const generateVideoThumbnail = (req, res) => {
   const filename = req.params.filename;
   const baseDirUser = ensureUserUploadDir(req.user.id);
-  const filePath = path.join(baseDirUser, filename);
+  const filePath = path.resolve(baseDirUser, filename);
+  if (!filePath.startsWith(baseDirUser + path.sep)) {
+    return res.status(400).json({ error: 'Invalid path' });
+  }
   const thumbsDir = path.join(baseDirUser, 'thumbs');
   const thumbPath = path.join(thumbsDir, `${filename}.jpg`);
 
@@ -100,7 +132,10 @@ const generateVideoThumbnail = (req, res) => {
 const generateImageThumbnail = async (req, res) => {
   const filename = req.params.filename;
   const baseDirUser = ensureUserUploadDir(req.user.id);
-  const filePath = path.join(baseDirUser, filename);
+  const filePath = path.resolve(baseDirUser, filename);
+  if (!filePath.startsWith(baseDirUser + path.sep)) {
+    return res.status(400).json({ error: 'Invalid path' });
+  }
   const thumbsDir = path.join(baseDirUser, 'thumbs');
   const thumbPath = path.join(thumbsDir, `${filename}.jpg`);
 
@@ -126,13 +161,16 @@ const generateImageThumbnail = async (req, res) => {
 
 const previewFile = (req, res) => {
   const baseDirUser = ensureUserUploadDir(req.user.id);
-  const filePath = path.join(baseDirUser, req.params.filename);
+  const filePath = path.resolve(baseDirUser, req.params.filename);
+  if (!filePath.startsWith(baseDirUser + path.sep)) {
+    return res.status(400).json({ error: 'Invalid path' });
+  }
 
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'File not found' });
   }
 
-  const mimeType = mime.getType(filePath);
+  const mimeType = mime.lookup(filePath) || '';
 
   // Text und Bilder direkt anzeigen, andere ggf. ablehnen oder herunterladen
   const previewable = ['image/', 'text/', 'application/pdf'];
@@ -148,7 +186,10 @@ const previewFile = (req, res) => {
 
 const deleteFileOrFolder = (req, res) => {
   const baseDirUser = ensureUserUploadDir(req.user.id);
-  const targetPath = path.join(baseDirUser, req.params.filename);
+  const targetPath = path.resolve(baseDirUser, req.params.filename);
+  if (!targetPath.startsWith(baseDirUser + path.sep)) {
+    return res.status(400).json({ error: 'Invalid path' });
+  }
 
   if (!fs.existsSync(targetPath)) {
     return res.status(404).json({ error: 'File or folder not found' });
@@ -170,38 +211,76 @@ const deleteFileOrFolder = (req, res) => {
   }
 };
 
-const multer = require('multer');
-
-const upload = multer({ storage: multer.memoryStorage() });
-
-const handleUpload = async (req, res) => {
+const handleUpload = (req, res) => {
   const baseDirUser = ensureUserUploadDir(req.user.id);
-  const files = req.files;
-  // read paths from body (may be string or array)
-  let paths = req.body.paths || req.body['paths[]'];
-  if (!paths) {
-    console.warn('Warning: paths[] missing from request');
-    paths = [];
-  } else if (!Array.isArray(paths)) {
-    paths = [paths]; // force to array
-  }
+  const busboy = Busboy({ headers: req.headers });
 
-  try {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const relativePath = paths[i] || file.originalname;
-      const fullPath = path.join(baseDirUser, relativePath);
+  const pathMap = {};
+  const uploads = [];
 
-      const dir = path.dirname(fullPath);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(fullPath, file.buffer);
+  busboy.on('field', (fieldname, val) => {
+    if (fieldname.startsWith('relativePath:') && typeof val === 'string') {
+      const fileId = fieldname.split(':')[1];
+      pathMap[fileId] = val;
+    }
+  });
+
+  busboy.on('file', (fieldname, file, filename) => {
+    console.log('🔍 Incoming file fieldname:', fieldname);
+    const cleanPath = pathMap[fieldname] || filename;
+
+    if (typeof cleanPath !== 'string') {
+      console.warn('Rejected non-string cleanPath:', cleanPath);
+      return res.status(400).json({ error: 'Invalid file path' });
     }
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Upload failed' });
-  }
+    const sanitizedPath = path.normalize(cleanPath);
+    const targetPath = path.resolve(baseDirUser, sanitizedPath);
+    if (!targetPath.startsWith(baseDirUser + path.sep)) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
+    const dir = path.dirname(targetPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    let finalPath = targetPath;
+    let count = 1;
+    while (fs.existsSync(finalPath)) {
+      const parsed = path.parse(targetPath);
+      finalPath = path.join(parsed.dir, `${parsed.name} (${count++})${parsed.ext}`);
+    }
+    const writeStream = fs.createWriteStream(finalPath);
+    file.pipe(writeStream);
+
+    const uploadPromise = new Promise((resolve, reject) => {
+      writeStream.on('close', () => {
+        console.log(`✅ Upload abgeschlossen: ${finalPath}`);
+        // Enqueue thumbnail generation job
+        const mimeType = mime.lookup(finalPath) || '';
+        if (mimeType.startsWith('image/')) {
+          thumbnailQueue.add({ filePath: finalPath, type: 'image' });
+        } else if (mimeType.startsWith('video/')) {
+          thumbnailQueue.add({ filePath: finalPath, type: 'video' });
+        }
+        // Promise in jedem Fall auflösen, sonst hängt der Upload ewig
+        resolve();
+      });
+      writeStream.on('error', reject);
+    });
+
+    uploads.push(uploadPromise);
+  });
+
+  busboy.on('finish', async () => {
+    try {
+      await Promise.all(uploads);
+      res.status(200).json({ success: true });
+    } catch (err) {
+      console.error('❌ Fehler beim Schreiben:', err);
+      res.status(500).json({ error: 'Upload fehlgeschlagen' });
+    }
+  });
+
+  req.pipe(busboy);
 };
 
 module.exports = {

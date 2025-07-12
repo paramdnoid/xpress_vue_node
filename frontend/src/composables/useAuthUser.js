@@ -5,23 +5,22 @@ import { useAuthStore } from '@/stores/auth'
 
 export function useAuthUser() {
   const route = useRoute()
+  const requiresAuth = computed(() =>
+    route.matched.some(record => record.meta.requiresAuth)
+  )
   const authStore = useAuthStore()
 
   const fetchUser = async () => {
-    const token = localStorage.getItem('accessToken')
-    try {
-      if (!route.meta.guest) {
+    // Only load and validate user on protected routes
+    if (requiresAuth.value) {
+      try {
         const res = await axios.get('/auth/me')
         authStore.setUser(res.data)
-
-      }
-    } catch (err) {
-      console.warn('❌ /auth/me failed:', err)
-
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        console.log('🔁 Should trigger token refresh if interceptor works')
-        authStore.clearUser()
-        if (route.meta.requiresAuth) {
+      } catch (err) {
+        console.warn('❌ /auth/me failed:', err)
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          console.log('🔁 Token invalid, clearing user and redirecting to login')
+          authStore.clearUser()
           window.location.href = '/login'
         }
       }
@@ -29,7 +28,9 @@ export function useAuthUser() {
   }
 
   onMounted(() => {
-    fetchUser()
+    if (requiresAuth.value) {
+      fetchUser()
+    }
   })
 
   return { user: computed(() => authStore.user) }

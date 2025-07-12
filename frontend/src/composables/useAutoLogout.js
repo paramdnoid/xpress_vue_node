@@ -33,7 +33,10 @@ export function useAutoLogout() {
   }
 
   onMounted(() => {
-    scheduleTimers()
+    const remaining = getTokenRemainingSeconds()
+    if (remaining > 0) {
+      scheduleTimers()
+    }
   })
 
   onUnmounted(() => {

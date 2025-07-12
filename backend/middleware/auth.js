@@ -1,20 +1,17 @@
 const jwt = require('jsonwebtoken');
 
-/**
- * Middleware to verify JWT token from Authorization header.
- * @param {import('express').Request} req - Express request object
- * @param {import('express').Response} res - Express response object
- * @param {import('express').NextFunction} next - Express next middleware function
- * @returns {void}
- */
 function verifyToken(req, res, next) {
+    // Support token from Authorization header or HttpOnly cookie
+    let token;
     const authHeader = req.headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.warn('Authorization header missing or malformed');
-        return res.status(401).json({ error: 'Unauthorized' });
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
+    } else {
+      console.warn('JWT token missing in Authorization header or accessToken cookie');
+      return res.status(401).json({ error: 'Unauthorized' });
     }
-
-    const token = authHeader.split(' ')[1];
 
     try {
         req.user = jwt.verify(token, process.env.JWT_SECRET);

@@ -18,7 +18,15 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:3000'
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            res.setHeader('X-Accel-Buffering', 'no');
+          });
+        }
+      }
     }
   },
   resolve: {

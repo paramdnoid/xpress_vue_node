@@ -10,18 +10,9 @@ function generateAccessToken(payload) {
   );
 }
 
-// Ensure you have JWT_EXPIRES_IN set in your .env (e.g., '115m')
-
 const MAX_DEVICES = 5;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-/**
- * Generates and stores a refresh token for the given user.
- * Enforces a device limit and logs token creation.
- * @param {Object} user - The user object.
- * @param {Object} req - Express request object.
- * @returns {Promise<string>} The generated refresh token.
- */
 async function generateRefreshToken(user, req) {
   const token = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
@@ -44,13 +35,6 @@ async function generateRefreshToken(user, req) {
   return token;
 }
 
-/**
- * Handles refresh token exchange for an access token.
- * Provides consistent error output and logs rejections.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {Object} JSON response with new access token or error.
- */
 const refreshToken = async (req, res) => {
   const oldToken = req.cookies?.refresh_token || req.body.token;
   if (!oldToken) {
@@ -99,12 +83,6 @@ const refreshToken = async (req, res) => {
   }
 };
 
-/**
- * Revokes a refresh token (logout) and logs the action.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {Object} JSON response confirming revocation.
- */
 const revokeToken = async (req, res) => {
   const token = req.cookies?.refresh_token || req.body.token;
   const allDevices = req.body.allDevices === true;
