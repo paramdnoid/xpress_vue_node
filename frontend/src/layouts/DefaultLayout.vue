@@ -148,6 +148,7 @@
         </header>
         <div class="page-wrapper" :class="{ 'body-bg-overlay': logoTargetPath !== '/' }">
             <slot />
+            <UploadToast v-if="fileStore.uploadQueue.length > 0" />
             <template v-if="logoTargetPath !== '/'">
                 <Footer />
             </template>
@@ -168,6 +169,9 @@ import { useAutoLogout } from '@/composables/useAutoLogout'
 import logo from '@/assets/images/logo-light.svg'
 import Footer from '@/components/Footer.vue'
 import UserDropdown from '@/components/UserDropdown.vue'
+import UploadToast from '@/components/UploadToast.vue'
+import { useFileStore } from '@/stores/files'
+const fileStore = useFileStore()
 
 const route = useRoute()
 const props = defineProps({ auth: Boolean })

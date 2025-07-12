@@ -2,9 +2,10 @@ import axios from '@/axios';
 import { useAuthStore } from '@/stores/auth'
 
 export async function login(email, password) {
+  const authStore = useAuthStore()
   try {
     const res = await axios.post('auth/login', { email, password });
-    localStorage.setItem('accessToken', res.data.accessToken);
+    authStore.setAccessToken(res.data.accessToken)
     return true;
   } catch (err) {
     console.error('Login failed: Please check your email and password and try again.', err);
@@ -28,7 +29,7 @@ function isTokenExpired(token) {
  */
 export async function refreshAccessToken() {
   const authStore = useAuthStore()
-  const currentToken = localStorage.getItem('accessToken')
+  const currentToken = authStore.accessToken
 
   if (currentToken && !isTokenExpired(currentToken)) {
     return true // Token noch gültig
@@ -39,7 +40,20 @@ export async function refreshAccessToken() {
 
     const newToken = res.data?.accessToken
     if (newToken) {
-      localStorage.setItem('accessToken', newToken)
+      authStore.setAccessToken(newToken)
+      const decoded = decodeJWT(newToken);
+      if (decoded && !authStore.user) {
+        if (decoded.email && decoded.role) {
+          authStore.setUser(decoded);
+        } else {
+          try {
+            const me = await axios.get('/auth/me');
+            authStore.setUser(me.data);
+          } catch (e) {
+            console.warn('⚠️ Failed to load /auth/me:', e);
+          }
+        }
+      }
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
       console.log('🔄 Access token refreshed')
       return true
@@ -48,22 +62,21 @@ export async function refreshAccessToken() {
     }
   } catch (err) {
     console.warn('❌ Refresh failed, logging out...')
-    authStore.clearUser()
-    localStorage.removeItem('accessToken')
+    authStore.logout()
     window.location.href = '/login'
     return false
   }
 }
 
 export async function logout() {
+  const authStore = useAuthStore()
   try {
     await axios.post('/token/revoke', {}, { withCredentials: true });
     console.log('🔒 Refresh token revoked');
   } catch (e) {
     console.warn("⚠️ Could not revoke token:", e?.response || e);
   }
-
-  localStorage.removeItem('accessToken');
+  authStore.logout()
   window.location.href = '/login';
 }
 

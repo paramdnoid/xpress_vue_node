@@ -1,8 +1,35 @@
+function buildFileTree(flatFiles) {
+  const pathMap = {};
+  const root = [];
+
+  flatFiles.forEach(file => {
+    file.children = [];
+    pathMap[file.path] = file;
+  });
+
+  flatFiles.forEach(file => {
+    const segments = file.path.split('/');
+    if (segments.length === 1) {
+      root.push(file);
+    } else {
+      const parentPath = segments.slice(0, -1).join('/');
+      const parent = pathMap[parentPath];
+      if (parent) {
+        parent.children.push(file);
+      } else {
+        root.push(file); // falls übergeordneter Ordner fehlt
+      }
+    }
+  });
+
+  return root;
+}
+
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import axios from '@/axios';
 
-const MAX_PARALLEL_UPLOADS = 5
+const CHUNK_SIZE = 4 * 1024 * 1024;
 
 export const useFileStore = defineStore('file', () => {
   const currentPath = ref('/');
@@ -15,13 +42,14 @@ export const useFileStore = defineStore('file', () => {
   const uploadQueue = ref([]);
   const isUploading = ref(false); // FIX: Make reactive
   const totalSize = ref(null);
+  const preparationProgress = ref({ done: 0, total: 0 });
 
   const loadFiles = async (path = currentPath.value) => {
     error.value = null;
     success.value = null;
     try {
       const response = await axios.get('/files', { params: { path } });
-      files.value = response.data.children || [];
+      files.value = buildFileTree(response.data.children || []);
     } catch (err) { // FIX: Catch the error parameter
       console.error('Error loading files:', err);
       error.value = 'Fehler beim Laden der Dateien';
@@ -31,6 +59,11 @@ export const useFileStore = defineStore('file', () => {
   const processUploadQueue = async () => {
     if (isUploading.value) return; // FIX: Use .value
     isUploading.value = true; // FIX: Use .value
+
+    // Dynamische Berechnung der maximalen parallelen Uploads je nach Gesamtgröße der Dateien
+    const totalSizeBytes = uploadQueue.value.reduce((sum, item) => sum + (item.chunkFile?.size || 0), 0);
+    const MAX_PARALLEL_UPLOADS = totalSizeBytes > 500 * 1024 * 1024 ? 8 : 4; // >500MB = 8 Uploads, sonst 4
+    console.debug('⚙️ Upload parallelism set to', MAX_PARALLEL_UPLOADS);
 
     const uploadNext = async () => {
       while (true) {
@@ -239,6 +272,12 @@ export const useFileStore = defineStore('file', () => {
     return { pending, uploading, paused, error, done, total: uploadQueue.value.length };
   };
 
+  // Hilfsfunktion für Vorbereitung-Fortschritt
+  const updatePreparationProgress = (done, total) => {
+    preparationProgress.value.done = done;
+    preparationProgress.value.total = total;
+  };
+
   return {
     currentPath,
     setCurrentPath,
@@ -257,6 +296,8 @@ export const useFileStore = defineStore('file', () => {
     cancelUpload,
     totalSize,
     isUploading,
-    getUploadQueueStatus
+    getUploadQueueStatus,
+    preparationProgress,
+    updatePreparationProgress,
   };
 });

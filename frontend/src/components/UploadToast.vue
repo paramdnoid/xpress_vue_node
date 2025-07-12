@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 const fileStore = useFileStore()
 
-const { uploadQueue } = storeToRefs(fileStore)
+const { uploadQueue, preparationProgress, uploadDuration } = storeToRefs(fileStore)
 
 const overallProgress = computed(() => {
   const queue = uploadQueue.value;
@@ -17,6 +17,10 @@ const overallProgress = computed(() => {
 
 const isActive = computed(() =>
   uploadQueue.value.some(item => item.status !== 'done' && item.status !== 'canceled')
+);
+
+const isPreparing = computed(() =>
+  uploadQueue.value.some(item => item.status === 'preparing')
 );
 </script>
 
@@ -40,8 +44,15 @@ const isActive = computed(() =>
         <button type="button" class="btn-close" aria-label="Schließen"></button>
       </div>
       <div class="toast-body pt-2" style="max-height: 300px; overflow-y: auto;">
+        <div v-if="isPreparing" class="text-center small text-muted mb-2 d-flex justify-content-center align-items-center gap-2">
+          <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+          📁 Vorbereitung läuft… ({{ preparationProgress.done }} / {{ preparationProgress.total }})
+        </div>
         <div v-if="isActive" class="text-center small mb-2">
           Gesamt-Upload: {{ overallProgress }}%
+        </div>
+        <div v-if="uploadDuration > 0" class="text-center small text-muted mt-2">
+          ⏱️ Upload-Dauer: {{ Math.round(uploadDuration / 1000) }} Sekunden
         </div>
         <div class="progress" v-if="isActive">
           <div

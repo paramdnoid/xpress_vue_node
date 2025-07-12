@@ -6,7 +6,7 @@
           Uploads <div class="ms-auto fw-lighter">{{ totalSize }}</div>
         </div>
         <nav class="nav nav-vertical px-2">
-          <Tree v-for="child in fileStore.files.filter(c => c.type === 'folder')" :key="child.path" :node="child" />
+          <Tree v-for="child in fileStore.files" :key="child.path" :node="child" />
         </nav>
       </div>
     </template>
@@ -43,7 +43,6 @@
         <Grid v-if="!fileStore.error && viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
         <Table v-else-if="!fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
       </div>
-      <UploadToast :key="fileStore.uploadQueue.length" />
     </template>
   </SidebarLayout>
 </template>
@@ -55,7 +54,6 @@ import { useFileStore } from '@/stores/files';
 import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop';
 import { uploadFilesInChunks } from '@/composables/useChunkedUpload';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
-import UploadToast from '@/components/UploadToast.vue'
 import Tree from './Tree.vue';
 import Grid from './Grid.vue'
 import Table from './Table.vue'

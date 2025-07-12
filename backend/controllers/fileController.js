@@ -10,6 +10,7 @@ const baseDir = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../
 
 const getFolderFiles = async (req, res) => {
   const baseDirUser = ensureUserUploadDir(req.user.id);
+  console.debug('🔐 fileController: req.headers.authorization =', req.headers.authorization);
   // Normalize path: strip any leading slashes so '/' refers to baseDirUser
   let relativePath = req.query.path || '';
   relativePath = relativePath.replace(/^\/+/, '');
@@ -202,19 +203,32 @@ const handleChunkUpload = async (req, res) => {
       const finalDir = path.dirname(finalPath);
       if (!fs.existsSync(finalDir)) fs.mkdirSync(finalDir, { recursive: true });
 
-      const writeStream = fs.createWriteStream(finalPath);
+      const writeStream = fs.createWriteStream(finalPath, { flags: 'a' });
+      const start = Date.now();
 
       for (let i = 0; i < totalChunks; i++) {
         const partPath = path.join(chunksDir, `${originalName}.${i}.part`);
+
         await new Promise((resolve, reject) => {
-          const read = fs.createReadStream(partPath);
-          read.pipe(writeStream, { end: false });
-          read.on('end', resolve);
-          read.on('error', reject);
+          const readStream = fs.createReadStream(partPath);
+          readStream.on('error', reject);
+          writeStream.on('error', reject);
+          readStream.on('end', async () => {
+            try {
+              await fsp.unlink(partPath);
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          });
+          readStream.pipe(writeStream, { end: false });
         });
-        fs.unlinkSync(partPath);
       }
+
       writeStream.end();
+      writeStream.on('finish', () => {
+        console.debug(`⏱️ Zusammenbau abgeschlossen in ${Date.now() - start} ms`);
+      });
 
       return res.status(200).json({ success: true, message: 'Datei erfolgreich zusammengefügt!' });
     } else {

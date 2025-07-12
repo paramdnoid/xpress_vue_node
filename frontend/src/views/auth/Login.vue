@@ -62,17 +62,20 @@ import PasswordField from '@/components/PasswordField.vue';
 import { ref } from 'vue';
 import axios from '@/axios';
 import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
 const email = ref('');
 const password = ref('');
 
 const router = useRouter();
 const route = useRoute();
-
+const authStore = useAuthStore();
 
 const login = async () => {
-  const res = await axios.post('/auth/login', { email: email.value, password: password.value }, { withCredentials: true })
-  localStorage.setItem('accessToken', res.data.token || res.data.accessToken);
+  const res = await axios.post('/auth/login', { email: email.value, password: password.value }, { withCredentials: true });
+
+  authStore.setAccessToken(res.data.accessToken);
+
   const redirect = route.query.redirect || '/file-manager';
   router.push(redirect);
 };

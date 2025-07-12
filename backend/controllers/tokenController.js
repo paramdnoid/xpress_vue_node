@@ -1,5 +1,8 @@
+const { setAuthCookies } = require('./authController');
 const jwt = require('jsonwebtoken');
 const db = require('../models/db');
+
+const REFRESH_EXPIRES_IN = '7d';
 
 // Generates an access token for a given payload
 function generateAccessToken(payload) {
@@ -12,9 +15,18 @@ function generateAccessToken(payload) {
 
 const MAX_DEVICES = 5;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+async function saveRefresh(userId, token, req) {
+  await db.saveRefreshToken({
+    user_id: userId,
+    token,
+    user_agent: req.headers['user-agent'],
+    ip_address: req.ip,
+    expires_at: new Date(Date.now() + SEVEN_DAYS_MS)
+  });
+}
 
 async function generateRefreshToken(user, req) {
-  const token = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES_IN });
 
   // Gerätelimit prüfen
   const count = await db.countRefreshTokens(user.id);
@@ -23,13 +35,7 @@ async function generateRefreshToken(user, req) {
     console.log(`[refreshToken] Device limit reached for user ${user.id}, deleted oldest refresh token`);
   }
 
-  await db.saveRefreshToken({
-    user_id: user.id,
-    token,
-    user_agent: req.headers['user-agent'],
-    ip_address: req.ip,
-    expires_at: new Date(Date.now() + SEVEN_DAYS_MS) // 7 Tage
-  });
+  await saveRefresh(user.id, token, req);
   console.log(`[refreshToken] Created refresh token for user ${user.id} from IP ${req.ip}`);
 
   return token;
@@ -55,25 +61,13 @@ const refreshToken = async (req, res) => {
     await db.deleteRefreshToken(oldToken);
 
     // 3. Neuen Refresh + Access Token erzeugen
-    const newRefreshToken = jwt.sign({ id: payload.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    const newRefreshToken = jwt.sign({ id: payload.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES_IN });
 
-    await db.saveRefreshToken({
-      user_id: payload.id,
-      token: newRefreshToken,
-      user_agent: req.headers['user-agent'],
-      ip_address: req.ip,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    });
+    await saveRefresh(payload.id, newRefreshToken, req);
 
     // Generate access token using shared helper
     const accessToken = generateAccessToken({ id: payload.id });
-
-    res.cookie('refresh_token', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+    setAuthCookies(res, accessToken, newRefreshToken);
 
     console.log(`[ROTATE] Refresh token rotated for user ${payload.id}`);
     return res.json({ accessToken });
@@ -122,4 +116,5 @@ module.exports = {
   generateRefreshToken,
   revokeAllUserTokens,
   generateAccessToken,
+  SEVEN_DAYS_MS,
 };

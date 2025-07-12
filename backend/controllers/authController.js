@@ -5,6 +5,18 @@ const bcrypt = require('bcrypt');
 const db = require('../models/db');
 const { generateRefreshToken, generateAccessToken } = require('./tokenController');
 const crypto = require('crypto');
+
+// Helper to set auth cookies: only refresh_token as HttpOnly cookie (accessToken is sent in JSON)
+function setAuthCookies(res, accessToken, refreshToken) {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie('refresh_token', refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'Strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+  // ⛔ accessToken wird nicht mehr per Cookie gesetzt – Client soll Authorization: Bearer verwenden
+}
 const { sendVerificationEmail } = require('../utils/mail');
 
 const login = async (req, res) => {
@@ -25,25 +37,13 @@ const login = async (req, res) => {
       // Generate access token using shared helper
       const accessToken = generateAccessToken({ id: user.id });
     const refreshToken = await generateRefreshToken(user, req);
+    
 
-    // Set refresh token as HttpOnly cookie
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 7 * ONE_DAY_MS // 7 days
-    });
-
-    // Set access token as HttpOnly cookie for subsequent authenticated requests
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 30 * 60 * 1000 // 30 minutes matching access token TTL
-    });
+    // Set auth cookies using helper
+    setAuthCookies(res, accessToken, refreshToken);
 
     console.log(`[LOGIN] User logged in: ${email}`);
-    return res.status(200).json({ accessToken, token: accessToken });
+    return res.status(200).json({ accessToken });
   } catch (err) {
     console.error('[LOGIN] Error:', err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -139,4 +139,4 @@ const resendVerification = async (req, res) => {
   }
 };
 
-module.exports = { login, register, getProfile, verifyEmail, resendVerification };
+module.exports = { login, register, getProfile, verifyEmail, resendVerification, setAuthCookies };

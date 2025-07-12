@@ -1,15 +1,14 @@
 const jwt = require('jsonwebtoken');
 
 function verifyToken(req, res, next) {
-    // Support token from Authorization header or HttpOnly cookie
+    // Only support token from Authorization header
     let token;
     const authHeader = req.headers['authorization'];
+    console.debug('🔐 Incoming Authorization Header:', authHeader);
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
-    } else if (req.cookies && req.cookies.accessToken) {
-      token = req.cookies.accessToken;
     } else {
-      console.warn('JWT token missing in Authorization header or accessToken cookie');
+      console.warn('JWT token missing in Authorization header');
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
