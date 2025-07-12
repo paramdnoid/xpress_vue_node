@@ -3,17 +3,8 @@ const fsp = fs.promises;
 const path = require('path');
 const mime = require('mime-types');
 const sharp = require('sharp');
-const Busboy = require('busboy');
 const { filesize } = require('filesize');
 require('dotenv').config();
-
-const Queue = require('bull');
-const thumbnailQueue = new Queue('thumbnails', {
-  redis: {
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: process.env.REDIS_PORT || 6379
-  }
-});
 
 const baseDir = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../..', 'uploads'));
 
@@ -90,43 +81,6 @@ const getTotalUserUploadSize = (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Failed to calculate total user upload size' });
   }
-};
-
-const generateVideoThumbnail = (req, res) => {
-  const filename = req.params.filename;
-  const baseDirUser = ensureUserUploadDir(req.user.id);
-  const filePath = path.resolve(baseDirUser, filename);
-  if (!filePath.startsWith(baseDirUser + path.sep)) {
-    return res.status(400).json({ error: 'Invalid path' });
-  }
-  const thumbsDir = path.join(baseDirUser, 'thumbs');
-  const thumbPath = path.join(thumbsDir, `${filename}.jpg`);
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Video file not found' });
-  }
-
-  if (fs.existsSync(thumbPath)) {
-    return res.sendFile(thumbPath);
-  }
-
-  // Thumb generieren
-  if (!fs.existsSync(thumbsDir)) fs.mkdirSync(thumbsDir);
-
-  ffmpeg(filePath)
-    .on('end', () => {
-      res.sendFile(thumbPath);
-    })
-    .on('error', (err) => {
-      console.error('FFmpeg error:', err.message);
-      res.status(500).json({ error: 'Thumbnail generation failed' });
-    })
-    .screenshots({
-      timestamps: ['1'],
-      filename: `${filename}.jpg`,
-      folder: thumbsDir,
-      size: '320x240'
-    });
 };
 
 const generateImageThumbnail = async (req, res) => {
@@ -277,7 +231,6 @@ module.exports = {
   getFolderSizeRoute,
   getTotalUserUploadSize,
   previewFile,
-  generateVideoThumbnail,
   generateImageThumbnail,
   deleteFileOrFolder,
   handleChunkUpload

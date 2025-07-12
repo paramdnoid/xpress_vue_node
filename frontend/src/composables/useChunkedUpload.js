@@ -16,7 +16,7 @@ export async function uploadFilesInChunks(files, currentPath = '') {
   
   try {
     for (const file of files) {
-      console.log(`Starting upload for file: ${file.name}, size: ${file.size} bytes`);
+      //console.log(`Starting upload for file: ${file.name}, size: ${file.size} bytes`);
       
       // Skip empty files
       if (file.size === 0) {
@@ -27,14 +27,14 @@ export async function uploadFilesInChunks(files, currentPath = '') {
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       const fileId = crypto.randomUUID();
       
-      console.log(`File will be split into ${totalChunks} chunks`);
+      //console.log(`File will be split into ${totalChunks} chunks`);
 
       for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
         const start = chunkIndex * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = file.slice(start, end);
 
-        console.log(`Processing chunk ${chunkIndex + 1}/${totalChunks} (${chunk.size} bytes)`);
+        //console.log(`Processing chunk ${chunkIndex + 1}/${totalChunks} (${chunk.size} bytes)`);
 
         const formData = new FormData();
         
@@ -47,7 +47,7 @@ export async function uploadFilesInChunks(files, currentPath = '') {
         // Remove leading slash if present
         const cleanPath = fullPath.replace(/^\/+/, '');
         
-        console.log(`Upload path: ${cleanPath}`);
+        //console.log(`Upload path: ${cleanPath}`);
 
         // Append form data with consistent naming
         formData.append('fileId', fileId);
@@ -60,7 +60,7 @@ export async function uploadFilesInChunks(files, currentPath = '') {
 
         try {
 
-          console.log('Uploading chunk:', { cleanPath, chunkIndex, totalChunks });
+          //console.log('Uploading chunk:', { cleanPath, chunkIndex, totalChunks });
           await fileStore.uploadFile({
             chunkFile: chunk,
             fullFileName: cleanPath,
@@ -72,17 +72,17 @@ export async function uploadFilesInChunks(files, currentPath = '') {
 
 
           
-          console.log(`Successfully uploaded chunk ${chunkIndex + 1}/${totalChunks} for ${file.name}`);
+          //console.log(`Successfully uploaded chunk ${chunkIndex + 1}/${totalChunks} for ${file.name}`);
         } catch (chunkError) {
           console.error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks} for ${file.name}:`, chunkError);
           throw new Error(`Upload failed for ${file.name} at chunk ${chunkIndex + 1}: ${chunkError.message}`);
         }
       }
       
-      console.log(`Successfully completed upload for file: ${file.name}`);
+      //console.log(`Successfully completed upload for file: ${file.name}`);
     }
     
-    console.log('All files uploaded successfully');
+    //console.log('All files uploaded successfully');
   } catch (error) {
     console.error('Upload process failed:', error);
     throw error;

@@ -244,7 +244,6 @@ export const useFileStore = defineStore('file', () => {
     setCurrentPath,
     files,
     loadFiles,
-
     error,
     success,
     uploadFile,
@@ -257,7 +256,7 @@ export const useFileStore = defineStore('file', () => {
     resumeUpload,
     cancelUpload,
     totalSize,
-    isUploading, // FIX: Export reactive isUploading
-    getUploadQueueStatus, // FIX: Export new utility function
+    isUploading,
+    getUploadQueueStatus
   };
 });
