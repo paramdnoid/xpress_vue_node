@@ -53,7 +53,9 @@ import { onMounted, inject, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useFileStore } from '@/stores/files';
 import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop';
+import { uploadFilesInChunks } from '@/composables/useChunkedUpload';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
+import UploadToast from '@/components/UploadToast.vue'
 import Tree from './Tree.vue';
 import Grid from './Grid.vue'
 import Table from './Table.vue'
@@ -93,15 +95,8 @@ const confirmDelete = async (file) => {
 };
 
 const handleDrop = async (event) => {
-  const fileEntries = await getFilesFromDataTransferItems(event.dataTransfer.items)
-  for (const file of fileEntries) {
-    const formData = new FormData();
-    const uploadPath = fileStore.currentPath === '/' ? '' : fileStore.currentPath + '/';
-    const fileId = crypto.randomUUID();
-    formData.append(`relativePath:${fileId}`, uploadPath + (file.relativePath || file.name));
-    formData.append(fileId, file, file.name);
-    fileStore.uploadFile(formData, file.name || file.relativePath);
-  }
+  const fileEntries = await getFilesFromDataTransferItems(event.dataTransfer.items);
+  await uploadFilesInChunks(fileEntries, fileStore.currentPath);
 };
 
 onMounted(async () => {

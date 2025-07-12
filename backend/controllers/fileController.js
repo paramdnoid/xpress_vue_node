@@ -211,72 +211,65 @@ const deleteFileOrFolder = (req, res) => {
   }
 };
 
-const handleUpload = (req, res) => {
-  const baseDirUser = ensureUserUploadDir(req.user.id);
-  const busboy = Busboy({ headers: req.headers });
+const handleChunkUpload = async (req, res) => {
+  try {
+    const baseDirUser = ensureUserUploadDir(req.user.id);
+    const chunksDir = path.join(baseDir, 'chunks');
+    fs.mkdirSync(chunksDir, { recursive: true });
 
-  const pathMap = {};
-  const uploads = [];
+    const chunkIndex = parseInt(req.body.chunkIndex);
+    const totalChunks = parseInt(req.body.totalChunks);
+    const relPath = req.body.relativePath;
+    const originalName = req.body.originalName || (relPath ? path.basename(relPath) : req.file.originalname);
 
-  busboy.on('field', (fieldname, val) => {
-    if (fieldname.startsWith('relativePath:') && typeof val === 'string') {
-      const fileId = fieldname.split(':')[1];
-      pathMap[fileId] = val;
-    }
-  });
-
-  busboy.on('file', (fieldname, file, filename) => {
-    const cleanPath = pathMap[fieldname] || filename;
-
-    if (typeof cleanPath !== 'string') {
-      console.warn('Rejected non-string cleanPath:', cleanPath);
-      return res.status(400).json({ error: 'Invalid file path' });
+    if (!req.file) {
+      return res.status(400).json({ error: 'Chunk-Datei fehlt' });
     }
 
-    const sanitizedPath = path.normalize(cleanPath);
-    const targetPath = path.resolve(baseDirUser, sanitizedPath);
-    if (!targetPath.startsWith(baseDirUser + path.sep)) {
-      return res.status(400).json({ error: 'Invalid path' });
-    }
-    const dir = path.dirname(targetPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const chunkFilename = `${originalName}.${chunkIndex}.part`;
+    const chunkPath = path.join(chunksDir, chunkFilename);
 
-    let finalPath = targetPath;
-    let count = 1;
-    while (fs.existsSync(finalPath)) {
-      const parsed = path.parse(targetPath);
-      finalPath = path.join(parsed.dir, `${parsed.name} (${count++})${parsed.ext}`);
-    }
-    const writeStream = fs.createWriteStream(finalPath);
-    file.pipe(writeStream);
+    // Move uploaded chunk to chunks dir
+    fs.renameSync(req.file.path, chunkPath);
 
-    const uploadPromise = new Promise((resolve, reject) => {
-      writeStream.on('close', () => {
-        const mimeType = mime.lookup(finalPath) || '';
-        if (mimeType.startsWith('image/')) {
-          thumbnailQueue.add({ filePath: finalPath, type: 'image' });
-        } else if (mimeType.startsWith('video/')) {
-          thumbnailQueue.add({ filePath: finalPath, type: 'video' });
+    // Wenn letzter Chunk, Datei zusammensetzen
+    if (chunkIndex + 1 === totalChunks) {
+      // Prüfen, ob alle Chunk-Dateien existieren
+      for (let i = 0; i < totalChunks; i++) {
+        const partPath = path.join(chunksDir, `${originalName}.${i}.part`);
+        if (!fs.existsSync(partPath)) {
+          return res.status(400).json({
+            error: `Chunk-Datei fehlt: ${originalName}.${i}.part`
+          });
         }
-        resolve();
-      });
-      writeStream.on('error', reject);
-    });
+      }
 
-    uploads.push(uploadPromise);
-  });
+      const finalPath = path.join(baseDirUser, relPath || originalName);
+      const finalDir = path.dirname(finalPath);
+      if (!fs.existsSync(finalDir)) fs.mkdirSync(finalDir, { recursive: true });
 
-  busboy.on('finish', async () => {
-    try {
-      await Promise.all(uploads);
-      res.status(200).json({ success: true });
-    } catch (err) {
-      console.error('❌ Fehler beim Schreiben:', err);
-      res.status(500).json({ error: 'Upload fehlgeschlagen' });
+      const writeStream = fs.createWriteStream(finalPath);
+
+      for (let i = 0; i < totalChunks; i++) {
+        const partPath = path.join(chunksDir, `${originalName}.${i}.part`);
+        await new Promise((resolve, reject) => {
+          const read = fs.createReadStream(partPath);
+          read.pipe(writeStream, { end: false });
+          read.on('end', resolve);
+          read.on('error', reject);
+        });
+        fs.unlinkSync(partPath);
+      }
+      writeStream.end();
+
+      return res.status(200).json({ success: true, message: 'Datei erfolgreich zusammengefügt!' });
+    } else {
+      return res.status(200).json({ success: true, message: `Chunk ${chunkIndex + 1}/${totalChunks} gespeichert` });
     }
-  });
-
-  req.pipe(busboy);
+  } catch (err) {
+    console.error('❌ Chunk-Upload-Fehler:', err);
+    return res.status(500).json({ error: 'Chunk-Upload fehlgeschlagen' });
+  }
 };
 
 module.exports = {
@@ -287,7 +280,7 @@ module.exports = {
   generateVideoThumbnail,
   generateImageThumbnail,
   deleteFileOrFolder,
-  handleUpload
+  handleChunkUpload
 };
 
 function getFolderSize(dirPath) {
