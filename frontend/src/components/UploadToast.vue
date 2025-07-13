@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 const fileStore = useFileStore()
 
-const { uploadQueue, preparationProgress, uploadDuration } = storeToRefs(fileStore)
+const { uploadQueue, preparationProgress, uploadDuration, timeRemaining } = storeToRefs(fileStore)
 
 const overallProgress = computed(() => {
   const queue = uploadQueue.value;
@@ -53,6 +53,9 @@ const isPreparing = computed(() =>
         </div>
         <div v-if="uploadDuration > 0" class="text-center small text-muted mt-2">
           ⏱️ Upload-Dauer: {{ Math.round(uploadDuration / 1000) }} Sekunden
+        </div>
+        <div v-if="timeRemaining > 0" class="text-center small text-muted mt-1">
+          ⏳ Verbleibend: {{ Math.round(timeRemaining) }} Sekunden
         </div>
         <div class="progress" v-if="isActive">
           <div

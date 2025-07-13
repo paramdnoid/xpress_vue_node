@@ -1,7 +1,9 @@
 export function getFileIcon(file) {
+  if (!file || typeof file !== 'object') return 'mdi:file-outline';
   if (file.type === 'folder') return 'material-symbols-light:folder';
 
-  const ext = file.name.split('.').pop().toLowerCase();
+  const name = file.name || '';
+  const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
 
   const extensionMap = {
     // Images
