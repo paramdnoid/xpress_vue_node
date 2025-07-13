@@ -7,7 +7,7 @@ import router from './router'
 import { createPinia } from 'pinia'
 
 // 🛡️ Auth Setup
-import { setupAxiosInterceptors } from '@/utils/auth'
+import { initAuthFromStorage, setupAxiosInterceptors } from '@/utils/auth'
 
 // 🎨 Styles
 import 'iconify-icon'
@@ -21,6 +21,7 @@ app.use(pinia)
 app.use(router)
 
 // ✅ Jetzt erst: Auth & Axios
+initAuthFromStorage()
 setupAxiosInterceptors()
 
 // 🛡️ CSRF Token Setup

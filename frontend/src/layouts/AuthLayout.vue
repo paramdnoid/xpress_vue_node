@@ -22,10 +22,10 @@
         <div class="col-xxl-9 col-lg-8 col-md-7">
             <div class="body-bg clip bg-light py-md-5 p-4 d-flex h-100">
                 <div class="body-bg-overlay"></div>
-                <div class="row justify-content-center g-0 align-items-center w-100 position-relative">
+                <div class="row justify-content-center g-0 align-items-start align-items-md-center w-100 position-relative">
                     <div class="col-xl-5 col-lg-8">
                         <div class="frm-auth-logo pb-5 text-center">
-                            <img src="@/assets/images/logo-light.svg" alt="" class="img-fluid w-25">
+                            <img src="@/assets/images/logo-light.svg" alt="" class="img-fluid">
                         </div>
                         <div class="card">
                             <div class="card-body p-0">
@@ -75,7 +75,6 @@ const currentYear = new Date().getFullYear()
 </script>
 
 <style>
-
 .font-size-12 {
     font-size: 12px !important;
 }
@@ -148,6 +147,10 @@ const currentYear = new Date().getFullYear()
 
     .auth-bg {
         clip-path: none;
+    }
+
+    .img-fluid {
+        width: 20%;
     }
 }
 </style>

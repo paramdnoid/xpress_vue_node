@@ -31,17 +31,21 @@
           <div class="view-mode">
             <iconify-icon @click="viewMode = 'table'"
               :class="[viewMode === 'table' ? 'text-primary' : 'text-primary opacity-50']"
-              icon="material-symbols:event-list-outline-sharp" width="20" height="20"></iconify-icon>
+              icon="material-symbols:event-list-outline-sharp" width="20" height="20">
+            </iconify-icon>
             <div class="px-1"></div>
             <iconify-icon @click="viewMode = 'grid'"
               :class="[viewMode === 'grid' ? 'text-primary' : 'text-primary opacity-50']"
-              icon="material-symbols:grid-on" width="20" height="20"></iconify-icon>
+              icon="material-symbols:grid-on" width="20" height="20">
+            </iconify-icon>
           </div>
         </div>
         <div class="position-relative flex-fill" @dragover.prevent @drop.prevent="handleDrop">
           <div v-if="fileStore.error" class="text-danger text-center py-4">{{ fileStore.error }}</div>
-          <Grid v-if="!fileStore.error && viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
-          <Table v-else-if="!fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
+          <template v-else>
+            <Grid v-if="viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
+            <Table v-if="viewMode === 'table'" :files="fileStore.files" @delete="confirmDelete" />
+          </template>
         </div>
       </div>
     </template>
@@ -49,9 +53,9 @@
 </template>
 
 <script setup>
-import { onMounted, inject, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useFileStore } from '@/stores/files';
+import { onMounted, computed, watch, ref } from 'vue';
 import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop';
 import { uploadFilesInChunks } from '@/composables/useChunkedUpload';
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
@@ -61,7 +65,7 @@ import Table from './Table.vue'
 
 const fileStore = useFileStore();
 const { totalSize } = storeToRefs(fileStore);
-const viewMode = inject('viewMode', 'table')
+const viewMode = ref('table');
 const segments = computed(() =>
   fileStore.currentPath.split('/').filter(Boolean)
 )

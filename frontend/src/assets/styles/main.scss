@@ -35,8 +35,10 @@ body {
         background-repeat: no-repeat;
         background-size: cover;
 
-        &.clip {
-            clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
+        @media (min-width: 768px) { 
+            &.clip {
+                clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
+            }
         }
     }
 

@@ -100,4 +100,7 @@ table thead tr th {
   font-weight: bolder !important;
   color: var(--tblr-text-dark) !important;
 }
+table tbody tr:last-child {
+  border-bottom: transparent;
+}
 </style>
