@@ -1,5 +1,5 @@
 <template>
-  <div class="table-responsive px-2 h100 z-3">
+  <div class="table-responsive h-100 z-3">
     <table class="table table-hover table-vcenter">
       <thead>
         <tr>
@@ -94,5 +94,10 @@ const handleDropOnTable = async (event) => {
 <style>
 table tr {
   white-space: nowrap !important;
+}
+table thead tr th {
+  background: var(--tblr-gray-100) !important;
+  font-weight: bolder !important;
+  color: var(--tblr-text-dark) !important;
 }
 </style>

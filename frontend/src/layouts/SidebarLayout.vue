@@ -97,7 +97,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding: 10px 0;
 }
 
 

@@ -6,6 +6,8 @@ export async function login(email, password) {
   try {
     const res = await axios.post('auth/login', { email, password });
     authStore.setAccessToken(res.data.accessToken)
+    localStorage.setItem('accessToken', res.data.accessToken)
+    axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.accessToken}`
     return true;
   } catch (err) {
     console.error('Login failed: Please check your email and password and try again.', err);
@@ -41,6 +43,7 @@ export async function refreshAccessToken() {
     const newToken = res.data?.accessToken
     if (newToken) {
       authStore.setAccessToken(newToken)
+      localStorage.setItem('accessToken', newToken)
       const decoded = decodeJWT(newToken);
       if (decoded && !authStore.user) {
         if (decoded.email && decoded.role) {
@@ -97,4 +100,37 @@ export function getTokenRemainingSeconds() {
   const decoded = decodeJWT(token)
   if (!decoded || !decoded.exp) return 0
   return decoded.exp - Math.floor(Date.now() / 1000)
+}
+
+export function initAuthFromStorage() {
+  const token = localStorage.getItem('accessToken')
+  if (token) {
+    const authStore = useAuthStore()
+    authStore.setAccessToken(token)
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  }
+}
+
+export function setupAxiosInterceptors() {
+  axios.interceptors.request.use(async (config) => {
+    const authStore = useAuthStore()
+    if (authStore.accessToken && isTokenExpired(authStore.accessToken)) {
+      await refreshAccessToken()
+    }
+    config.headers['Authorization'] = `Bearer ${authStore.accessToken}`
+    return config
+  })
+
+  axios.interceptors.response.use(
+    res => res,
+    err => {
+      if (err.response?.status === 401) {
+        const authStore = useAuthStore()
+        authStore.logout()
+        localStorage.removeItem('accessToken')
+        window.location.href = '/login'
+      }
+      return Promise.reject(err)
+    }
+  )
 }

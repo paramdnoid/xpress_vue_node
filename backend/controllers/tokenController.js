@@ -1,4 +1,3 @@
-const { setAuthCookies } = require('./authController');
 const jwt = require('jsonwebtoken');
 const db = require('../models/db');
 

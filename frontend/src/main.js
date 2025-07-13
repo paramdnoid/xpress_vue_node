@@ -1,17 +1,30 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 
-// 📦 Externe Libraries
+// 📦 Core
 import axios from '@/axios'
 import router from './router'
 import { createPinia } from 'pinia'
 
-// 🎨 Styles und Assets
+// 🛡️ Auth Setup
+import { initAuthFromStorage, setupAxiosInterceptors } from '@/utils/auth'
+
+// 🎨 Styles
 import 'iconify-icon'
 import '@tabler/core/js/tabler.js'
 import './assets/styles/main.scss'
 
-// ✅ CSRF-Token nur einmal laden
+// 🚀 App Bootstrap
+const app = createApp(App)
+const pinia = createPinia()
+app.use(pinia)
+app.use(router)
+
+// ✅ Jetzt erst: Auth & Axios
+initAuthFromStorage()
+setupAxiosInterceptors()
+
+// 🛡️ CSRF Token Setup
 if (!window.__csrfTokenLoaded) {
   window.__csrfTokenLoaded = true
   axios.get('/csrf-token', { withCredentials: true })
@@ -23,14 +36,4 @@ if (!window.__csrfTokenLoaded) {
     })
 }
 
-const app = createApp(App)
-const pinia = createPinia()
-app.use(pinia)
-
-// 🛂 Auth-Store vorbereiten (nach Pinia-Einbindung)
-import { useAuthStore } from '@/stores/auth'
-const authStore = useAuthStore()
-authStore.initializeAuthFromStorage()
-
-app.use(router)
 app.mount('#app')

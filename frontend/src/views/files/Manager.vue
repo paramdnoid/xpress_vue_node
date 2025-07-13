@@ -11,9 +11,8 @@
       </div>
     </template>
     <template #content>
-      <div class="d-flex flex-column flex-fill position-relative">
-        <div @dragover.prevent @drop.prevent="handleDrop" class="drop-zone z-1"></div>
-        <div class="d-flex justify-content-between justify-items-center m-1 px-2 z-1">
+      <div class="d-flex flex-column flex-fill">
+        <div class="content-toolbar">
           <div class="breadcrumb-wrapper overflow-auto">
             <ol class="breadcrumb breadcrumb-muted" aria-label="breadcrumbs">
               <li class="breadcrumb-item">
@@ -39,9 +38,11 @@
               icon="material-symbols:grid-on" width="20" height="20"></iconify-icon>
           </div>
         </div>
-        <div v-if="fileStore.error" class="text-danger text-center py-4">{{ fileStore.error }}</div>
-        <Grid v-if="!fileStore.error && viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
-        <Table v-else-if="!fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
+        <div class="position-relative flex-fill" @dragover.prevent @drop.prevent="handleDrop">
+          <div v-if="fileStore.error" class="text-danger text-center py-4">{{ fileStore.error }}</div>
+          <Grid v-if="!fileStore.error && viewMode === 'grid'" :files="fileStore.files" @delete="confirmDelete" />
+          <Table v-else-if="!fileStore.error" :files="fileStore.files" @delete="confirmDelete" />
+        </div>
       </div>
     </template>
   </SidebarLayout>
@@ -124,6 +125,17 @@ watch(() => fileStore.currentPath, async (newPath) => {
 </script>
 
 <style>
+.content-toolbar {
+  height: 50px;
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--tblr-gray-100);
+  border-bottom: 1px solid var(--tblr-gray-200);
+  align-items: center;
+  padding: 0 10px;
+}
+
+
 .view-mode {
   width: auto;
   height: 24px;
