@@ -79,6 +79,7 @@ export const useFileStore = defineStore('file', () => {
         }
         
         uploadItem.status = 'uploading';
+        uploadItem.startTime = Date.now();
         uploadItem.progress = 0;
         uploadItem.error = null;
         
@@ -107,6 +108,8 @@ export const useFileStore = defineStore('file', () => {
             signal: uploadItem.controller.signal,
           });
           
+          uploadItem.endTime = Date.now();
+          uploadItem.duration = uploadItem.endTime - uploadItem.startTime;
           uploadItem.status = 'done';
           uploadItem.progress = 100;
           success.value = `Datei ${uploadItem.fullFileName} erfolgreich hochgeladen`; // FIX: Use fullFileName
@@ -178,6 +181,9 @@ export const useFileStore = defineStore('file', () => {
       chunkIndex,
       totalChunks,
       userId,
+      startTime: null,
+      endTime: null,
+      duration: null,
     });
     
     // FIX: Don't await this, let it run in background
@@ -299,5 +305,12 @@ export const useFileStore = defineStore('file', () => {
     getUploadQueueStatus,
     preparationProgress,
     updatePreparationProgress,
+    updateUploadDuration: (id) => {
+      const item = uploadQueue.value.find(item => item.id === id);
+      if (item && item.startTime && item.endTime) {
+        return item.endTime - item.startTime;
+      }
+      return null;
+    }
   };
 });
