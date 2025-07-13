@@ -8,6 +8,8 @@ import Flows from '@/views/Flows.vue';
 import Mails from '@/views/Mails.vue';
 import Meetings from '@/views/Meetings.vue';
 import Profile from '@/views/Profile.vue';
+import { useAuthStore } from '@/stores/auth';
+import { getTokenRemainingSeconds } from '@/utils/auth';
 
 const routes = [
   { path: '/', component: Landing, meta: { title: 'Landing', requiresAuth: false } },
@@ -17,8 +19,8 @@ const routes = [
   { path: '/mails', component: Mails, meta: { title: 'Mails', requiresAuth: true } },
   { path: '/meetings', component: Meetings, meta: { title: 'Meetings', requiresAuth: true } },
   { path: '/profile', component: Profile, meta: { title: 'Profile', requiresAuth: true } },
-  { path: '/login', component: Login, meta: { title: 'Login' } },
-  { path: '/register', component: Register, meta: { title: 'Register' } },
+  { path: '/login', component: Login, meta: { title: 'Login', guestOnly: true } },
+  { path: '/register', component: Register, meta: { title: 'Register', guestOnly: true } },
 ];
 
 const router = createRouter({
@@ -34,13 +36,19 @@ router.beforeEach(async (to, from, next) => {
     ? `${to.meta.title} | ${defaultTitle}`
     : defaultTitle;
 
-  // if route requires auth, ensure an access token is present
-  if (to.meta.requiresAuth) {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      console.warn('No access token – redirecting to Login');
-      return next({ path: '/login', query: { redirect: to.fullPath } });
-    }
+  const authStore = useAuthStore();
+
+
+
+  // Auth‑guarded routes
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    console.warn('Route requires auth – redirecting to Login');
+    return next({ path: '/login', query: { redirect: to.fullPath } });
+  }
+
+  // Guest‑only routes
+  if (to.meta.guestOnly && authStore.isAuthenticated) {
+    return next({ path: '/file-manager' });
   }
 
   next();

@@ -1,4 +1,11 @@
-// Build hierarchical tree structure from flat file list
+/**
+ * Converts a flat array of file/folder descriptors into a hierarchical tree structure
+ * suitable for tree‑view UI components.
+ *
+ * @param {Array<{path: string, name: string, type: 'file' | 'folder'}>} flatFiles
+ *   Flat list as delivered by the backend.
+ * @returns {Array<Object>} Hierarchical representation where folders include a `children` array.
+ */
 function buildFileTree(flatFiles) {
   const pathMap = {};
   const root = [];
@@ -49,3 +56,5 @@ function buildFileTree(flatFiles) {
   sortLevel(root);
   return root;
 }
+
+export { buildFileTree };

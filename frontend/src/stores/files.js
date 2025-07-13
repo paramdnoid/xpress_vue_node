@@ -1,3 +1,10 @@
+/**
+ * Transforms a flat array of file objects into a nested tree structure
+ * that Vue’s template renderer can traverse.
+ *
+ * @param {Array<{path: string, children?: Array}>} flatFiles
+ * @returns {Array} Hierarchically nested files/folders
+ */
 function buildFileTree(flatFiles) {
   const pathMap = {};
   const root = [];
@@ -28,6 +35,31 @@ function buildFileTree(flatFiles) {
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import axios from '@/axios';
+import debug from 'debug';
+const log = debug('fileStore');
+
+/** @typedef {'pending'|'uploading'|'paused'|'canceled'|'error'|'done'} UploadStatus */
+
+/**
+ * Central place for user‑visible texts – simplifies future i18n.
+ */
+const MESSAGES = {
+  UPLOAD_SUCCESS: (file) => `Datei ${file} erfolgreich hochgeladen`,
+  DELETE_SUCCESS: 'Datei/Ordner erfolgreich gelöscht',
+  LOAD_ERROR: 'Fehler beim Laden der Dateien',
+  UPLOAD_ERROR: 'Fehler beim Hochladen der Datei',
+  DELETE_ERROR: 'Fehler beim Löschen der Datei/des Ordners',
+  TOTAL_SIZE_ERROR: 'Fehler beim Abrufen der Gesamtspeichergröße',
+};
+
+/**
+ * Decide how many parallel uploads to run, based on total byte size.
+ * @param {number} totalBytes
+ * @returns {number}
+ */
+function calcMaxParallelUploads(totalBytes) {
+  return totalBytes > 500 * 1024 * 1024 ? 8 : 4; // >500 MB → 8, sonst 4
+}
 
 const CHUNK_SIZE = 4 * 1024 * 1024;
 
@@ -40,7 +72,7 @@ export const useFileStore = defineStore('file', () => {
   const success = ref(null);
 
   const uploadQueue = ref([]);
-  const isUploading = ref(false); // FIX: Make reactive
+  const isUploading = ref(false);
   const totalSize = ref(null);
   const preparationProgress = ref({ done: 0, total: 0 });
 
@@ -50,20 +82,20 @@ export const useFileStore = defineStore('file', () => {
     try {
       const response = await axios.get('/files', { params: { path } });
       files.value = buildFileTree(response.data.children || []);
-    } catch (err) { // FIX: Catch the error parameter
-      console.error('Error loading files:', err);
-      error.value = 'Fehler beim Laden der Dateien';
+    } catch (err) {
+      log('❌ Error loading files:', err);
+      error.value = MESSAGES.LOAD_ERROR;
     }
   };
 
   const processUploadQueue = async () => {
-    if (isUploading.value) return; // FIX: Use .value
-    isUploading.value = true; // FIX: Use .value
+    if (isUploading.value) return;
+    isUploading.value = true;
 
     // Dynamische Berechnung der maximalen parallelen Uploads je nach Gesamtgröße der Dateien
     const totalSizeBytes = uploadQueue.value.reduce((sum, item) => sum + (item.chunkFile?.size || 0), 0);
-    const MAX_PARALLEL_UPLOADS = totalSizeBytes > 500 * 1024 * 1024 ? 8 : 4; // >500MB = 8 Uploads, sonst 4
-    console.debug('⚙️ Upload parallelism set to', MAX_PARALLEL_UPLOADS);
+    const MAX_PARALLEL_UPLOADS = calcMaxParallelUploads(totalSizeBytes);
+    log('⚙️ Upload parallelism set to', MAX_PARALLEL_UPLOADS);
 
     const uploadNext = async () => {
       while (true) {
@@ -98,7 +130,6 @@ export const useFileStore = defineStore('file', () => {
             onUploadProgress: (progressEvent) => {
               if (progressEvent.lengthComputable) {
                 uploadItem.progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                // FIX: Update the queue reactively
                 const index = uploadQueue.value.findIndex(item => item.id === uploadItem.id);
                 if (index !== -1) {
                   uploadQueue.value[index] = { ...uploadItem };
@@ -112,7 +143,7 @@ export const useFileStore = defineStore('file', () => {
           uploadItem.duration = uploadItem.endTime - uploadItem.startTime;
           uploadItem.status = 'done';
           uploadItem.progress = 100;
-          success.value = `Datei ${uploadItem.fullFileName} erfolgreich hochgeladen`; // FIX: Use fullFileName
+          success.value = MESSAGES.UPLOAD_SUCCESS(uploadItem.fullFileName);
           
           // Upload nach kurzer Verzögerung aus der Queue entfernen
           setTimeout(() => {
@@ -120,13 +151,13 @@ export const useFileStore = defineStore('file', () => {
           }, 1000);
           
         } catch (err) {
-          console.error('Upload error:', err);
+          log('❌ Upload error:', err);
           if (err.name === 'CanceledError' || err.name === 'AbortError') {
             uploadItem.status = 'canceled';
             uploadItem.canceled = true;
           } else {
             uploadItem.status = 'error';
-            uploadItem.error = 'Fehler beim Hochladen der Datei';
+            uploadItem.error = MESSAGES.UPLOAD_ERROR;
             error.value = uploadItem.error;
           }
         }
@@ -142,14 +173,14 @@ export const useFileStore = defineStore('file', () => {
     try {
       await Promise.all(workers);
     } catch (err) {
-      console.error('Error in upload workers:', err);
+      log('❌ Error in upload workers:', err);
     }
 
     // Nach Abschluss aller Uploads: Dateien neu laden
     try {
       await loadFiles();
     } catch (err) {
-      console.error('Error reloading files after upload:', err);
+      log('❌ Error reloading files after upload:', err);
     }
 
     // Nach Abschluss aller Uploads: Gesamtgröße einmalig abrufen
@@ -157,10 +188,10 @@ export const useFileStore = defineStore('file', () => {
       const size = await getTotalSize();
       if (size !== null) totalSize.value = size;
     } catch (err) {
-      console.error('Error getting total size:', err);
+      log('❌ Error getting total size:', err);
     }
 
-    isUploading.value = false; // FIX: Use .value
+    isUploading.value = false;
   };
 
   const enqueueUpload = ({ chunkFile, fullFileName, chunkIndex, totalChunks, userId }) => {
@@ -186,9 +217,8 @@ export const useFileStore = defineStore('file', () => {
       duration: null,
     });
     
-    // FIX: Don't await this, let it run in background
     processUploadQueue().catch(err => {
-      console.error('Error processing upload queue:', err);
+      log('❌ Error processing upload queue:', err);
     });
   };
 
@@ -198,7 +228,7 @@ export const useFileStore = defineStore('file', () => {
     if (uploadItem && !uploadItem.canceled && uploadItem.status !== 'done') {
       uploadItem.paused = true;
       if (uploadItem.status === 'uploading') {
-        uploadItem.controller.abort(); // FIX: Abort active upload
+        uploadItem.controller.abort();
       }
       uploadItem.status = 'paused';
     }
@@ -211,11 +241,10 @@ export const useFileStore = defineStore('file', () => {
       uploadItem.paused = false;
       uploadItem.status = 'pending';
       
-      // FIX: Create new AbortController for resumed upload
       uploadItem.controller = new AbortController();
       
       processUploadQueue().catch(err => {
-        console.error('Error processing upload queue on resume:', err);
+        log('❌ Error processing upload queue on resume:', err);
       });
     }
   };
@@ -230,7 +259,6 @@ export const useFileStore = defineStore('file', () => {
     }
   };
 
-  // FIX: This function signature doesn't match its usage
   const uploadFile = ({ chunkFile, fullFileName, chunkIndex, totalChunks, userId }) => {
     enqueueUpload({ chunkFile, fullFileName, chunkIndex, totalChunks, userId });
   };
@@ -240,12 +268,12 @@ export const useFileStore = defineStore('file', () => {
     success.value = null;
     try {
       await axios.delete(`/files/delete/${encodeURIComponent(path)}`);
-      success.value = 'Datei/Ordner erfolgreich gelöscht';
+      success.value = MESSAGES.DELETE_SUCCESS;
       // Nach dem Löschen: aktuellen Ordner neu laden
       await loadFiles();
     } catch (err) {
-      console.error('Error deleting file:', err);
-      error.value = 'Fehler beim Löschen der Datei/des Ordners';
+      log('❌ Error deleting file:', err);
+      error.value = MESSAGES.DELETE_ERROR;
       throw err;
     }
   };
@@ -261,13 +289,19 @@ export const useFileStore = defineStore('file', () => {
       const response = await axios.get('/files/total-size');
       return response.data.size;
     } catch (err) {
-      console.error('Error getting total size:', err);
-      error.value = 'Fehler beim Abrufen der Gesamtspeichergröße';
+      log('❌ Error getting total size:', err);
+      error.value = MESSAGES.TOTAL_SIZE_ERROR;
       return null;
     }
   };
 
-  // FIX: Add utility function to get upload queue status
+  /**
+   * Derive a quick snapshot of the current upload queue –
+   * nützlich für Status-Badges oder Telemetrie.
+   *
+   * @returns {{pending:number, uploading:number, paused:number,
+   *            error:number, done:number, total:number}}
+   */
   const getUploadQueueStatus = () => {
     const pending = uploadQueue.value.filter(item => item.status === 'pending').length;
     const uploading = uploadQueue.value.filter(item => item.status === 'uploading').length;
@@ -278,7 +312,6 @@ export const useFileStore = defineStore('file', () => {
     return { pending, uploading, paused, error, done, total: uploadQueue.value.length };
   };
 
-  // Hilfsfunktion für Vorbereitung-Fortschritt
   const updatePreparationProgress = (done, total) => {
     preparationProgress.value.done = done;
     preparationProgress.value.total = total;

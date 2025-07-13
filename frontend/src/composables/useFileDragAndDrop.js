@@ -1,5 +1,7 @@
 export async function getFilesFromDataTransferItems(items) {
   const files = []
+  // Maximal parallel verarbeitete Directory‑Einträge (gegen Memory‑Blowups)
+  const BATCH_SIZE = 20
 
   async function readAllEntries(reader) {
     const entries = []
@@ -11,17 +13,25 @@ export async function getFilesFromDataTransferItems(items) {
     return entries
   }
 
-  async function traverseEntry(entry, path = '') {
+  /**
+   * Traversiert FileSystemEntry‑Bäume.
+   * Nutzt entry.fullPath → keine doppelten Root‑Segmente mehr.
+   * Arbeitet in BATCH_SIZE‑Paketen, um nicht tausende Promises
+   * gleichzeitig zu erzeugen.
+   */
+  async function traverseEntry(entry) {
     if (entry.isFile) {
       const file = await new Promise(resolve => entry.file(resolve))
-      file.relativePath = path + file.name
+      file.relativePath = entry.fullPath.replace(/^\//, '') // führenden Slash kappen
       files.push(file)
     } else if (entry.isDirectory) {
       const reader = entry.createReader()
       const entries = await readAllEntries(reader)
-      await Promise.all(entries.map(child =>
-        traverseEntry(child, path + entry.name + '/')
-      ))
+      // In Batches traversieren, um Parallelität zu begrenzen
+      for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+        const slice = entries.slice(i, i + BATCH_SIZE)
+        await Promise.all(slice.map(child => traverseEntry(child)))
+      }
     }
   }
 

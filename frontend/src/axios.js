@@ -24,6 +24,21 @@ const instance = axios.create({
 })
 
 
+// ⏳ Proaktiver Token-Refresh 30 Sekunden vor Ablauf
+instance.interceptors.request.use(async config => {
+  const secsLeft = getTokenRemainingSeconds();
+  if (secsLeft !== null && secsLeft < 30 && !isRefreshing) {
+    try {
+      await refreshAccessToken();
+    } catch (_) {
+      // Falls der Refresh fehlschlägt, auf Login-Seite umleiten
+      window.location.href = '/login';
+      return Promise.reject('Token refresh failed');
+    }
+  }
+  return config;
+});
+
 // 🔁 Bei 401 automatisch refreshen & retry (mit Queue für parallele Requests)
 instance.interceptors.response.use(
   response => response,
@@ -53,6 +68,7 @@ instance.interceptors.response.use(
           .then(refreshed => {
             isRefreshing = false;
             if (refreshed) {
+              originalRequest._retry = false;
               processQueue(null);
               resolve(instance(originalRequest));
             } else {
