@@ -6,8 +6,7 @@ const db = require('../models/db');
 const { generateRefreshToken, generateAccessToken } = require('./tokenController');
 const crypto = require('crypto');
 
-// Helper to set auth cookies: only refresh_token as HttpOnly cookie (accessToken is sent in JSON)
-function setAuthCookies(res, accessToken, refreshToken) {
+function setAuthCookies(res, refreshToken) {
   const isProd = process.env.NODE_ENV === 'production';
   res.cookie('refresh_token', refreshToken, {
     httpOnly: true,
@@ -15,7 +14,6 @@ function setAuthCookies(res, accessToken, refreshToken) {
     sameSite: 'Strict',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
-  // ⛔ accessToken wird nicht mehr per Cookie gesetzt – Client soll Authorization: Bearer verwenden
 }
 const { sendVerificationEmail } = require('../utils/mail');
 
