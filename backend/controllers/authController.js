@@ -1,9 +1,8 @@
-
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const bcrypt = require('bcrypt');
 const db = require('../models/db');
-const { generateRefreshToken, generateAccessToken } = require('./tokenController');
+const { generateRefreshToken, generateAccessToken, SEVEN_DAYS_MS } = require('./tokenController');
 const crypto = require('crypto');
 
 function setAuthCookies(res, refreshToken) {
@@ -12,7 +11,7 @@ function setAuthCookies(res, refreshToken) {
     httpOnly: true,
     secure: isProd,
     sameSite: 'Strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    maxAge: SEVEN_DAYS_MS // 7 days
   });
 }
 const { sendVerificationEmail } = require('../utils/mail');
@@ -32,13 +31,12 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-      // Generate access token using shared helper
-      const accessToken = generateAccessToken({ id: user.id });
+    // Generate tokens
+    const accessToken = generateAccessToken({ id: user.id });
     const refreshToken = await generateRefreshToken(user, req);
     
-
-    // Set auth cookies using helper
-    setAuthCookies(res, accessToken, refreshToken);
+    // Set refresh token as cookie
+    setAuthCookies(res, refreshToken);
 
     console.log(`[LOGIN] User logged in: ${email}`);
     return res.status(200).json({ accessToken });

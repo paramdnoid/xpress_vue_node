@@ -1,7 +1,6 @@
 // stores/auth.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from '@/axios'
 
 const STORAGE_KEY = 'accessToken';
 
@@ -26,19 +25,22 @@ export const useAuthStore = defineStore('auth', () => {
   function initializeAuthFromStorage() {
     const token = localStorage.getItem(STORAGE_KEY);
     if (token) {
-      setAccessToken(token)
+      accessToken.value = token // Setze nur den Token, nicht localStorage
     }
   }
-  initializeAuthFromStorage();
 
   function logout() {
     accessToken.value = null
     user.value = null
+    localStorage.removeItem(STORAGE_KEY) // Stelle sicher, dass localStorage geleert wird
   }
 
   function clearUser() {
     user.value = null
   }
+
+  // Initialisiere beim Store-Setup
+  initializeAuthFromStorage();
 
   return {
     user,

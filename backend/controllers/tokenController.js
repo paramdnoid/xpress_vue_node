@@ -8,12 +8,13 @@ function generateAccessToken(payload) {
   return jwt.sign(
     payload,
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '30m' }
+    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } // Längere Gültigkeit
   );
 }
 
 const MAX_DEVICES = 5;
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 async function saveRefresh(userId, token, req) {
   await db.saveRefreshToken({
     user_id: userId,
@@ -43,7 +44,8 @@ async function generateRefreshToken(user, req) {
 const refreshToken = async (req, res) => {
   const oldToken = req.cookies?.refresh_token || req.body.token;
   if (!oldToken) {
-    return res.status(400).json({ error: 'No token provided' });
+    console.log('[REFRESH] No token provided');
+    return res.status(401).json({ error: 'No refresh token provided' });
   }
 
   try {
@@ -52,7 +54,9 @@ const refreshToken = async (req, res) => {
     // 1. Prüfen, ob Token existiert (noch nicht benutzt wurde)
     const found = await db.findRefreshToken(oldToken);
     if (!found) {
-      console.warn(`[SECURITY] Attempted reuse of invalid/expired refresh token`);
+      console.warn(`[SECURITY] Attempted reuse of invalid/expired refresh token for user ${payload.id}`);
+      // Alle Tokens für diesen User löschen (potentieller Angriff)
+      await db.query('DELETE FROM refresh_tokens WHERE user_id = ?', [payload.id]);
       return res.status(403).json({ error: 'Invalid refresh token' });
     }
 
@@ -66,12 +70,22 @@ const refreshToken = async (req, res) => {
 
     // Generate access token using shared helper
     const accessToken = generateAccessToken({ id: payload.id });
-    setAuthCookies(res, accessToken, newRefreshToken);
+
+    // Set new refresh token as cookie
+    setRefreshTokenCookie(res, newRefreshToken);
 
     console.log(`[ROTATE] Refresh token rotated for user ${payload.id}`);
     return res.json({ accessToken });
   } catch (err) {
     console.warn('[ROTATE] Invalid or expired refresh token:', err.message);
+    
+    // Versuche trotzdem zu löschen, falls Token in DB existiert
+    try {
+      await db.deleteRefreshToken(oldToken);
+    } catch (deleteErr) {
+      // Ignoriere Fehler beim Löschen
+    }
+    
     return res.status(401).json({ error: 'Invalid refresh token' });
   }
 };
@@ -81,7 +95,7 @@ const revokeToken = async (req, res) => {
   const allDevices = req.body.allDevices === true;
 
   if (!token) {
-    console.log('[revokeToken] No token provided');
+    console.log('[REVOKE] No token provided');
     return res.json({ revoked: false });
   }
 
@@ -90,23 +104,36 @@ const revokeToken = async (req, res) => {
 
     if (allDevices) {
       await db.query('DELETE FROM refresh_tokens WHERE user_id = ?', [payload.id]);
-      console.log(`[revokeToken] All devices revoked for user ${payload.id}`);
+      console.log(`[REVOKE] All devices revoked for user ${payload.id}`);
     } else {
       await db.deleteRefreshToken(token);
-      console.log(`[revokeToken] Single device token revoked`);
+      console.log(`[REVOKE] Single device token revoked for user ${payload.id}`);
     }
 
     res.clearCookie('refresh_token');
     return res.json({ revoked: true });
   } catch (err) {
-    console.error('[revokeToken] Invalid token', err);
-    return res.status(401).json({ error: 'Invalid token' });
+    console.warn('[REVOKE] Invalid token:', err.message);
+    
+    // Versuche trotzdem Cookie zu löschen
+    res.clearCookie('refresh_token');
+    return res.json({ revoked: false, error: 'Invalid token' });
   }
 };
 
-// Ergänzen:
+// Helper function to set refresh token cookie
+function setRefreshTokenCookie(res, refreshToken) {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie('refresh_token', refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'Strict',
+    maxAge: SEVEN_DAYS_MS
+  });
+}
+
 async function revokeAllUserTokens(userId) {
-  await db.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId])
+  await db.query('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
 }
 
 module.exports = {
