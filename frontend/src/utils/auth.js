@@ -62,7 +62,7 @@ async function performTokenRefresh() {
   const authStore = useAuthStore()
   
   try {
-    const res = await axios.post('/api/token/refresh', {}, { 
+    const res = await axios.post('/token/refresh', {}, { 
       withCredentials: true,
       // Verwende keinen Authorization Header für Refresh
       headers: { 'Authorization': undefined }
@@ -76,7 +76,7 @@ async function performTokenRefresh() {
       // Lade User-Daten nach, falls nicht vorhanden
       if (!authStore.user) {
         try {
-          const me = await axios.get('/api/auth/me');
+          const me = await axios.get('/auth/me');
           authStore.setUser(me.data);
         } catch (e) {
           console.warn('⚠️ Failed to load /auth/me:', e);
@@ -99,7 +99,7 @@ async function performLogout() {
   const authStore = useAuthStore()
   
   try {
-    await axios.post('/api/token/revoke', {}, { 
+    await axios.post('/token/revoke', {}, { 
       withCredentials: true,
       headers: { 'Authorization': undefined }
     });

@@ -77,6 +77,6 @@ const login = async () => {
   authStore.setAccessToken(res.data.accessToken);
 
   const redirect = route.query.redirect || '/file-manager';
-  router.push(redirect);
+  window.location.href = redirect
 };
 </script>
