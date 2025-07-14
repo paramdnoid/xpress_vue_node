@@ -148,7 +148,9 @@
         </header>
         <div class="page-wrapper" :class="{ 'body-bg-overlay': logoTargetPath !== '/' }">
             <slot />
-            <UploadToast v-if="fileStore.uploadQueue.length > 0" />
+            <teleport to="body">
+                <UploadToast v-if="fileStore.uploadQueue.size > 0" />
+            </teleport>
             <template v-if="logoTargetPath !== '/'">
                 <Footer />
             </template>

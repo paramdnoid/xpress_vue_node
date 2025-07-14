@@ -6,8 +6,10 @@ const fileStore = useFileStore()
 
 const { uploadQueue, preparationProgress, uploadDuration, timeRemaining } = storeToRefs(fileStore)
 
+const uploadQueueItems = computed(() => Array.from(uploadQueue.value.values()));
+
 const overallProgress = computed(() => {
-  const queue = uploadQueue.value;
+  const queue = uploadQueueItems.value;
   if (!queue.length) return 0;
   const activeItems = queue.filter(item => item.status !== 'done' && item.status !== 'canceled');
   // Durchschnitt aller progress-Werte
@@ -16,11 +18,11 @@ const overallProgress = computed(() => {
 });
 
 const isActive = computed(() =>
-  uploadQueue.value.some(item => item.status !== 'done' && item.status !== 'canceled')
+  uploadQueueItems.value.some(item => item.status !== 'done' && item.status !== 'canceled')
 );
 
 const isPreparing = computed(() =>
-  uploadQueue.value.some(item => item.status === 'preparing')
+  uploadQueueItems.value.some(item => item.status === 'preparing')
 );
 </script>
 
