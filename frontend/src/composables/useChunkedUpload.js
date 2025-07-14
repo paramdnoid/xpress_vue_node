@@ -1,74 +1,118 @@
+// /src/composables/useChunkedUpload.js
+import pLimit from 'p-limit'
 import { useFileStore } from '@/stores/files'
 
-const CHUNK_SIZE = 4 * 1024 * 1024;
-const MAX_PARALLEL_UPLOADS = 4;
+// Basis-Parameter
+const DEFAULT_CHUNK_SIZE = 4 * 1024 * 1024  // 4 MB
+const MAX_PARALLEL_CHUNK_UPLOADS = 4               // Chunks pro Datei
+const MAX_PARALLEL_FILE_UPLOADS = 5               // Dateien gleichzeitig
+const MAX_RETRIES = 3               // Backoff-Versuche
+const INITIAL_BACKOFF_MS = 500             // ms
 
-const CONCURRENT_FILE_LIMIT = 5;
+/**
+ * Ermittelt dynamisch die Chunk-Größe basierend auf dem Netzwerk-Typ.
+ */
+function getChunkSize() {
+  const conn = navigator.connection?.effectiveType || ''
+  if (conn.includes('2g')) return DEFAULT_CHUNK_SIZE / 4
+  if (conn.includes('3g')) return DEFAULT_CHUNK_SIZE / 2
+  if (conn.includes('4g') || conn === 'wifi') return DEFAULT_CHUNK_SIZE * 2
+  return DEFAULT_CHUNK_SIZE
+}
 
-export async function uploadFilesInChunks(files, currentPath = '') {
-  const fileStore = useFileStore();
-  const startTime = performance.now();
-
-  // Input validation
-  if (!files || !Array.isArray(files) || files.length === 0) {
-    return;
-  }
-
-  // Normalize currentPath
-  const normalizedPath = currentPath.replace(/^\/+|\/+$/g, '');
-
+/**
+ * Führt einen Upload mit exponentiellem Backoff bei Rate-Limits (HTTP 429) oder Timeouts durch.
+ */
+async function retryWithBackoff(fn, attempt = 1) {
   try {
-    fileStore.updatePreparationProgress(0, files.length);
-    for (let i = 0; i < files.length; i += CONCURRENT_FILE_LIMIT) {
-      const slice = files.slice(i, i + CONCURRENT_FILE_LIMIT);
-      await Promise.all(slice.map(async (file, index) => {
-        await uploadSingleFileInChunks(file, normalizedPath, fileStore);
-        fileStore.updatePreparationProgress(i + index + 1, files.length);
-      }));
+    return await fn()
+  } catch (err) {
+    const status = err.response?.status || err.statusCode
+    const isRateLimit = status === 429
+    if (attempt >= MAX_RETRIES || !isRateLimit) {
+      throw err
     }
-    const endTime = performance.now();
-    fileStore.updateUploadDuration(endTime - startTime);
-    console.debug(`⏱️ Upload abgeschlossen in ${(endTime - startTime).toFixed(0)} ms`);
-    //console.log('All files uploaded successfully');
-  } catch (error) {
-    const endTime = performance.now();
-    fileStore.updateUploadDuration(endTime - startTime);
-    console.debug(`⏱️ Upload abgeschlossen in ${(endTime - startTime).toFixed(0)} ms`);
-    console.error('Upload process failed:', error);
-    throw error;
+    const delay = INITIAL_BACKOFF_MS * 2 ** (attempt - 1)
+    await new Promise(res => setTimeout(res, delay))
+    return retryWithBackoff(fn, attempt + 1)
   }
 }
 
-async function uploadSingleFileInChunks(file, normalizedPath, fileStore) {
-  await new Promise(r => setTimeout(r, 5));
+/**
+ * Lädt ein Array von File-Objekten in Chunks hoch.
+ */
+export async function uploadFilesInChunks(files, currentPath = '') {
+  const fileStore = useFileStore()
+  if (!files?.length) return
+
+  const normalizedPath = currentPath.replace(/^\/+|\/+$/g, '')
+  const CHUNK_SIZE = getChunkSize()
+  const startTime = performance.now()
+  fileStore.updatePreparationProgress(0, files.length)
+
+  const fileLimiter = pLimit(MAX_PARALLEL_FILE_UPLOADS)
+
+  // Erstelle für jede Datei eine Aufgabe mit Limitierung
+  const tasks = files.map((file, idx) =>
+    fileLimiter(async () => {
+      await uploadSingleFileInChunks(file, normalizedPath, fileStore, CHUNK_SIZE)
+      fileStore.updatePreparationProgress(idx + 1, files.length)
+    })
+  )
+
+  try {
+    await Promise.all(tasks)
+    const duration = performance.now() - startTime
+    fileStore.updateUploadDuration(duration)
+    console.debug(`✅ Alle Uploads in ${duration.toFixed(0)} ms abgeschlossen`)
+  } catch (err) {
+    const duration = performance.now() - startTime
+    fileStore.updateUploadDuration(duration)
+    console.error('Upload process failed:', err)
+    throw err
+  }
+}
+
+/**
+ * Lädt eine einzelne Datei in parallelisierten Chunks hoch.
+ */
+async function uploadSingleFileInChunks(file, normalizedPath, fileStore, CHUNK_SIZE) {
+  // Kurze Pause, um den Event-Loop nicht zu blockieren
+  await new Promise(r => setTimeout(r, 5))
 
   if (file.size === 0) {
-    console.warn(`Skipping empty file: ${file.name}`);
-    return;
+    console.warn(`Skipping empty file: ${file.name}`)
+    return
   }
 
-  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-  const fileId = crypto.randomUUID();
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
+  const chunkLimiter = pLimit(MAX_PARALLEL_CHUNK_UPLOADS)
 
-  await Promise.all(
-    Array.from({ length: totalChunks }).map((_, chunkIndex) => {
-      const start = chunkIndex * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const chunk = file.slice(start, end);
+  // Pfad + Dateiname
+  const relPath = file.webkitRelativePath || file.relativePath || file.name
+  const fullPath = (normalizedPath
+    ? `${normalizedPath}/${relPath}`
+    : relPath
+  ).replace(/\/+/g, '/').replace(/^\/+/, '')
 
-      const relPath = file.webkitRelativePath || file.relativePath || file.name;
-      const fullPath = normalizedPath 
-        ? `${normalizedPath}/${relPath}`.replace(/\/+/g, '/')
-        : relPath;
-      const cleanPath = fullPath.replace(/^\/+/, '');
+  // Parallele Chunk-Uploads mit Backoff-Retry
+  const uploads = Array.from({ length: totalChunks }).map((_, chunkIndex) =>
+    chunkLimiter(() => {
+      const start = chunkIndex * CHUNK_SIZE
+      const end = Math.min(start + CHUNK_SIZE, file.size)
+      const chunk = file.slice(start, end)
 
-      return fileStore.uploadFile({
-        chunkFile: chunk,
-        fullFileName: cleanPath,
-        chunkIndex,
-        totalChunks,
-        userId: null
-      });
+      return retryWithBackoff(() =>
+        fileStore.uploadFile({
+          chunkFile: chunk,
+          fullFileName: fullPath,
+          chunkIndex,
+          totalChunks,
+          userId: null
+        })
+      )
     })
-  );
+  )
+
+  await Promise.all(uploads)
 }
