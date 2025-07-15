@@ -9,7 +9,6 @@ import Mails from '@/views/Mails.vue';
 import Meetings from '@/views/Meetings.vue';
 import Profile from '@/views/Profile.vue';
 import { useAuthStore } from '@/stores/auth';
-import { getTokenRemainingSeconds } from '@/utils/auth';
 
 const routes = [
   { path: '/', component: Landing, meta: { title: 'Landing', requiresAuth: false } },

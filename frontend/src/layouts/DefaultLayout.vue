@@ -161,7 +161,7 @@
 
 <script setup>
 // Vue core imports
-import { watchEffect, ref, onMounted } from 'vue'
+import { watchEffect, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 // Third-party and app-level composables

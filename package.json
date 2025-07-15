@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "lint:frontend": "eslint ./frontend/src --ext .js,.vue",
     "lint:backend": "eslint ./backend --ext .js"
   },

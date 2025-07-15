@@ -12,7 +12,7 @@ function processQueue(error, token = null) {
   failedQueue = [];
 }
 import axios from 'axios'
-import { refreshAccessToken, getTokenRemainingSeconds } from '@/utils/auth'
+import { refreshAccessToken } from '@/utils/auth'
 
 
 const API_BASE = import.meta.env.PROD ? '/api' : 'http://localhost:3000/api';
