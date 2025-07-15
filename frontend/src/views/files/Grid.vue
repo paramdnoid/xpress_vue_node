@@ -1,6 +1,6 @@
 <template>
   <div
-    class="position-relative z-1"
+    class="position-relative z-1 border-top"
     @dragover.prevent
     @drop.prevent="handleDrop"
     @dragleave.prevent="isDropActive = false"
@@ -97,7 +97,7 @@ const handleDrop = async (event) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.4);
+  background-color: rgba(0,0,0,0.4);
   display: flex;
   justify-content: center;
   align-items: center;

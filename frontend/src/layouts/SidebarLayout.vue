@@ -3,11 +3,12 @@
     <div class="page-body m-0">
       <div class="verti-dash-content">
         <SidebarToggle />
-        <div class="input-group input-group-sm me-3 w-100">
-          <span class="input-group-text bg-transparent border-0 text-light px-2">
+        <div class="input-group input-group-sm w-100">
+          <span class="input-group-text bg-transparent border-0 ps-1 pe-0">
             <iconify-icon icon="material-symbols:search" width="18" height="18" />
           </span>
-          <input type="search" v-model="searchQuery" class="form-control form-control-sm bg-transparent text-light border-0" placeholder="Search..." />
+          <input type="search" v-model="searchQuery"
+            class="form-control form-control-sm bg-transparent text-light border-0" placeholder="Search..." />
         </div>
       </div>
       <div class="d-flex flex-fill position-relative">
@@ -99,6 +100,10 @@ onMounted(() => {
   overflow-y: auto;
 }
 
+.input-group-text {
+  color: rgba(255, 255, 255, .8) !important;
+  opacity: .8;
+}
 
 .form-control.form-control-sm {
   background-color: transparent;
@@ -109,7 +114,7 @@ onMounted(() => {
 }
 
 .form-control.form-control-sm::placeholder {
-  color: rgba(255,255,255, .8);
+  color: rgba(255, 255, 255, .8);
   font-style: italic;
   font-size: .9rem;
 }

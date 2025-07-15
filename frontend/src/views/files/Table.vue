@@ -5,9 +5,9 @@
         <tr>
           <th>Type</th>
           <th class="w-100">Name</th>
-          <th class="text-center">Size</th>
           <th class="text-center">Updated</th>
-          <th></th>
+          <th class="text-center">Size</th>
+          <th class="text-center">#</th>
         </tr>
       </thead>
       <tbody @dragover.prevent @drop.prevent="handleDropOnTable">
@@ -18,22 +18,12 @@
         <tr v-for="file in fileStore.files" :key="file.name" @click="handleClick(file)" style="cursor: pointer">
           <td><iconify-icon :icon="getFileIcon(file)" class="icon text-primary" width="24" height="24" /></td>
           <td>{{ file.name }}</td>
+          <td class="text-center">{{ file.updated }}</td>
           <td class="text-center">
             <span v-if="file.size !== null">{{ file.size }}</span>
             <span v-else class="text-muted">…</span>
           </td>
-          <td class="text-center">{{ file.updated }}</td>
-          <td>
-            <div class="d-flex gap-1 align-items-center">
-              <button @click.stop class="btn btn-icon border-0 text-primary bg-transparent" title="Open">
-                <iconify-icon icon="mdi:eye-outline" />
-              </button>
-              <button @click.stop="deleteFile(file)" class="btn btn-icon border-0 text-danger bg-transparent"
-                title="Delete">
-                <iconify-icon icon="mdi:trash-can-outline" />
-              </button>
-            </div>
-          </td>
+          <td class="text-danger"><iconify-icon @click.stop="deleteFile(file)" icon="mdi:trash-can-outline" /></td>
         </tr>
       </tbody>
     </table>
@@ -95,11 +85,13 @@ const handleDropOnTable = async (event) => {
 table tr {
   white-space: nowrap !important;
 }
+
 table thead tr th {
   background: var(--tblr-gray-100) !important;
   font-weight: bolder !important;
   color: var(--tblr-text-dark) !important;
 }
+
 table tbody tr:last-child {
   border-bottom: transparent;
 }

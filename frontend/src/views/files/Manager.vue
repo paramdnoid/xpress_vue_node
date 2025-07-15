@@ -29,15 +29,29 @@
             </ol>
           </div>
           <div class="view-mode">
-            <iconify-icon @click="viewMode = 'table'"
-              :class="[viewMode === 'table' ? 'text-primary' : 'text-primary opacity-50']"
-              icon="material-symbols:event-list-outline-sharp" width="20" height="20">
-            </iconify-icon>
-            <div class="px-1"></div>
-            <iconify-icon @click="viewMode = 'grid'"
-              :class="[viewMode === 'grid' ? 'text-primary' : 'text-primary opacity-50']"
-              icon="material-symbols:grid-on" width="20" height="20">
-            </iconify-icon>
+            <a @click="viewMode = 'table'" href="#" class="btn btn-action">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="icon icon-tabler icons-tabler-outline icon-tabler-list">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M9 6l11 0" />
+                <path d="M9 12l11 0" />
+                <path d="M9 18l11 0" />
+                <path d="M5 6l0 .01" />
+                <path d="M5 12l0 .01" />
+                <path d="M5 18l0 .01" />
+              </svg>
+            </a>
+            <a @click="viewMode = 'grid'" href="#" class="btn btn-action">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="icon icon-tabler icons-tabler-outline icon-tabler-table">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" />
+                <path d="M3 10h18" />
+                <path d="M10 3v18" />
+              </svg>
+            </a>
           </div>
         </div>
         <div class="position-relative flex-fill" @dragover.prevent @drop.prevent="handleDrop">
@@ -125,7 +139,6 @@ watch(() => fileStore.currentPath, async (newPath) => {
   if (newPath !== null) await fileStore.loadFiles();
 }, { immediate: true });
 
-
 </script>
 
 <style>
@@ -134,29 +147,9 @@ watch(() => fileStore.currentPath, async (newPath) => {
   display: flex;
   justify-content: space-between;
   background-color: var(--tblr-gray-100);
-  border-bottom: 1px solid var(--tblr-gray-200);
+  /* border-bottom: 1px solid var(--tblr-gray-200); */
   align-items: center;
-  padding: 0 10px;
-}
-
-
-.view-mode {
-  width: auto;
-  height: 24px;
-  display: flex;
-  justify-content: center;
-  justify-items: center;
-  font-size: .8rem;
-}
-
-.view-mode iconify-icon {
-  width: 20px !important;
-  height: 20px !important;
-}
-
-.view-mode iconify-icon:hover {
-  cursor: pointer;
-  opacity: .8;
+  padding-left: 10px;
 }
 
 @media (max-width: 576px) {

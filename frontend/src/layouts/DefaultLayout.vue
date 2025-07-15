@@ -31,7 +31,8 @@
                             <div class="d-none d-md-block ps-2 text-truncate" style="max-width: 140px;">
                                 <div class="text-light text-truncate w-100 overflow-hidden lh-xs">{{ user?.name }}</div>
                                 <div class="mt-1 small text-truncate w-100 overflow-hidden lh-xs"
-                                    style="color: var(--tblr-gray-300);padding-right: 3px;">{{ user?.email }}</div>
+                                    style="color: var(--tblr-gray-300);padding-right: 3px;">{{ user?.email }}
+                                </div>
                             </div>
                         </a>
                         <UserDropdown />
