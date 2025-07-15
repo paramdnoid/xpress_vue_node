@@ -15,13 +15,12 @@
           <td><iconify-icon icon="icon-park-solid:back" width="18" height="18"></iconify-icon></td>
           <td colspan="4">..</td>
         </tr>
-        <tr v-for="file in fileStore.files" :key="file.name" @click="handleClick(file)" style="cursor: pointer">
+        <tr v-for="file in rows" :key="file.name" @click="handleClick(file)" style="cursor: pointer">
           <td><iconify-icon :icon="getFileIcon(file)" class="icon text-primary" width="24" height="24" /></td>
           <td>{{ file.name }}</td>
           <td class="text-center">{{ file.updated }}</td>
           <td class="text-center">
-            <span v-if="file.size !== null">{{ file.size }}</span>
-            <span v-else class="text-muted">…</span>
+            <span>{{ file.displaySize }}</span>
           </td>
           <td class="text-danger"><iconify-icon @click.stop="deleteFile(file)" icon="mdi:trash-can-outline" /></td>
         </tr>
@@ -31,11 +30,47 @@
 </template>
 
 <script setup>
+import { ref, computed, watchEffect, defineEmits } from 'vue'
+import axios from '@/axios'
 import { useFileStore } from '@/stores/files'
 import { getFileIcon } from '@/utils/fileIcon'
 import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop'
 
 const fileStore = useFileStore()
+
+const folderSizes = ref({})
+
+const sortedFiles = computed(() => {
+  return [...fileStore.files].sort((a, b) => {
+    if (a.type === 'folder' && b.type !== 'folder') return -1
+    if (a.type !== 'folder' && b.type === 'folder') return 1
+    return a.name.localeCompare(b.name)
+  })
+})
+
+// Fetch folder sizes
+watchEffect(() => {
+  sortedFiles.value
+    .filter(f => f.type === 'folder')
+    .forEach(async file => {
+      if (folderSizes.value[file.path] != null) return
+      try {
+        const { data } = await axios.get('/folder-size', { params: { path: file.path } })
+        folderSizes.value[file.path] = data.size
+      } catch {
+        folderSizes.value[file.path] = '—'
+      }
+    })
+})
+
+const rows = computed(() => 
+  sortedFiles.value.map(file => ({
+    ...file,
+    displaySize: file.type === 'folder'
+      ? (folderSizes.value[file.path] ?? '…')
+      : (file.size ?? '—')
+  }))
+)
 
 const emit = defineEmits(['delete'])
 
