@@ -6,6 +6,9 @@ frontend/dist
 frontend/node_modules
 frontend/package-lock.json
 
+node_modules
+package-lock.json
+
 uploads/*
 
 .DS_Store

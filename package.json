@@ -1,0 +1,18 @@
+{
+  "name": "xpress-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:frontend": "eslint ./frontend/src --ext .js,.vue",
+    "lint:backend": "eslint ./backend --ext .js"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "eslint-plugin-vue": "^9.0.0",
+    "vue-eslint-parser": "^9.0.0",
+    "eslint-plugin-unused-imports": "^3.0.0",
+    "@babel/eslint-parser": "^7.0.0"
+  }
+}
