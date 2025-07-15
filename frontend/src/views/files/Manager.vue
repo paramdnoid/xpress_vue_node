@@ -3,7 +3,7 @@
     <template #sidebar>
       <div>
         <div @click.prevent="goToRoot" class="subheader mb-2 px-3 fw-bolder d-flex cursor-pointer">
-          Uploads <div class="ms-auto fw-lighter">{{ totalSize }}</div>
+          Uploads <div class="ms-auto fw-lighter">{{ filesize(totalSize) }}</div>
         </div>
         <nav class="nav nav-vertical px-2">
           <Tree v-for="child in fileStore.files" :key="child.path" :node="child" />
@@ -72,6 +72,7 @@ import { useFileStore } from '@/stores/files';
 import { onMounted, computed, watch, ref } from 'vue';
 import { getFilesFromDataTransferItems } from '@/composables/useFileDragAndDrop';
 import { uploadFilesInChunks } from '@/composables/useChunkedUpload';
+import { filesize } from 'filesize'
 import SidebarLayout from '@/layouts/SidebarLayout.vue'
 import Tree from './Tree.vue';
 import Grid from './Grid.vue'
@@ -139,6 +140,18 @@ watch(() => fileStore.currentPath, async (newPath) => {
   if (newPath !== null) await fileStore.loadFiles();
 }, { immediate: true });
 
+watch(
+  () => fileStore.files,
+  async () => {
+    try {
+      const size = await fileStore.getTotalSize();
+      totalSize.value = size || '—';
+    } catch (err) {
+      console.error('Error updating totalSize:', err);
+      totalSize.value = '—';
+    }
+  }
+);
 </script>
 
 <style>
